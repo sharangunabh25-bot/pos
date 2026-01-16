@@ -1,9 +1,12 @@
 import { SerialPort } from 'serialport';
+import parseWeight from './scale.parser.js';
 import EventBus from '../../events/bus.js';
+import logger from '../../utils/logger.js';
 
 const port = new SerialPort({
-  path: 'COM3',
-  baudRate: 9600
+  path: 'COM3', // change if needed
+  baudRate: 9600,
+  autoOpen: true
 });
 
 let buffer = '';
@@ -14,15 +17,13 @@ port.on('data', data => {
   if (buffer.includes('\n')) {
     const weight = parseWeight(buffer);
     buffer = '';
-    if (weight) {
+    if (weight !== null) {
+      logger.info(`Weight received: ${weight}`);
       EventBus.emit('weight', weight);
     }
   }
 });
 
-function parseWeight(raw) {
-  // depends on scale protocol
-  // example: "WT: 1.250 kg"
-  const match = raw.match(/([\d.]+)/);
-  return match ? parseFloat(match[1]) : null;
-}
+port.on('error', err => {
+  logger.error(`Scale error: ${err.message}`);
+});
