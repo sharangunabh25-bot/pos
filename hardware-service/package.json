@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "node-thermal-printer": "^4.5.0",
     "serialport": "^13.0.0"
   }
 }
