@@ -1,5 +1,8 @@
-import './devices/scanner/scanner.hid.js';
-import './devices/scale/scale.serial.js';
-import './server.js';
+import app from './server.js';
 
-console.log('POS Hardware Service started');
+const PORT = 3001;
+
+app.listen(PORT, () => {
+  console.log('POS Hardware Service started');
+  console.log(`HTTP server running on port ${PORT}`);
+});

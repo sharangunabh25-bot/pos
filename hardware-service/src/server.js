@@ -1,33 +1,78 @@
 import express from 'express';
-import { WebSocketServer } from 'ws';
-import EventBus from './events/bus.js';
+
+// Route modules
+import printerRoutes from './routes/printer.routes.js';
 import scannerRoutes from './routes/scanner.routes.js';
 import scaleRoutes from './routes/scale.routes.js';
-import printerRoutes from './routes/printer.routes.js';
-import logger from './utils/logger.js';
 
 const app = express();
-app.use(express.json());
 
-app.use('/scanner', scannerRoutes);
-app.use('/scale', scaleRoutes);
-app.use('/printer', printerRoutes);
+/**
+ * ----------------------------------------------------
+ * Global Middleware
+ * ----------------------------------------------------
+ */
+app.use(express.json({ limit: '1mb' }));
 
-const server = app.listen(3001, () => {
-  logger.info('HTTP server running on port 3001');
+/**
+ * ----------------------------------------------------
+ * Health & System Routes
+ * ----------------------------------------------------
+ */
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    service: 'POS Hardware Service',
+    timestamp: new Date().toISOString(),
+  });
 });
 
-const wss = new WebSocketServer({ server });
-
-function broadcast(payload) {
-  const message = JSON.stringify(payload);
-  wss.clients.forEach(client => client.send(message));
-}
-
-EventBus.on('barcode', code => {
-  broadcast({ type: 'barcode', value: code });
+app.get('/', (req, res) => {
+  res.json({
+    message: 'POS Hardware Service is running',
+  });
 });
 
-EventBus.on('weight', weight => {
-  broadcast({ type: 'weight', value: weight });
+/**
+ * ----------------------------------------------------
+ * Hardware Routes
+ * ----------------------------------------------------
+ */
+
+// Printer (thermal / receipt printer)
+app.use('/api/printer', printerRoutes);
+
+// Barcode / QR scanner
+app.use('/api/scanner', scannerRoutes);
+
+// Weighing scale
+app.use('/api/scale', scaleRoutes);
+
+/**
+ * ----------------------------------------------------
+ * 404 Handler
+ * ----------------------------------------------------
+ */
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Route not found',
+    method: req.method,
+    path: req.originalUrl,
+  });
 });
+
+/**
+ * ----------------------------------------------------
+ * Global Error Handler
+ * ----------------------------------------------------
+ */
+app.use((err, req, res, next) => {
+  console.error('[ERROR]', err);
+
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message,
+  });
+});
+
+export default app;
