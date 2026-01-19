@@ -1,11 +1,25 @@
-import ThermalPrinter from "node-thermal-printer";
-import printerTypes from "node-thermal-printer/dist/printer-types.js";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+
+import thermal from "node-thermal-printer";
+
+const ThermalPrinter = thermal.ThermalPrinter;
+const PrinterTypes = thermal.PrinterTypes;
+
+// Native Windows spooler driver
+const windowsPrinterDriver = require("printer");
 
 export async function printReceipt(data) {
   try {
-    const printer = new ThermalPrinter.printer({
-      type: printerTypes.EPSON,
-      interface: "printer:EPSON TM-T88V Receipt", // EXACT WINDOWS NAME
+    const printer = new ThermalPrinter({
+      type: PrinterTypes.EPSON,
+
+      // ? REQUIRED: real Windows driver object
+      driver: windowsPrinterDriver,
+
+      // ? EXACT name from wmic output
+      interface: "printer:EPSON TM-T88V Receipt",
+
       options: {
         timeout: 5000
       }
@@ -14,29 +28,29 @@ export async function printReceipt(data) {
     const isConnected = await printer.isPrinterConnected();
 
     if (!isConnected) {
-      throw new Error("Printer not connected");
+      throw new Error("Printer not connected or not found in Windows");
     }
 
-    // ---- PRINT FORMAT ----
+    // -------- PRINT CONTENT --------
 
     printer.alignCenter();
     printer.bold(true);
-    printer.println(data.title || "POS BILL");
+    printer.println(data.title || "POS RECEIPT");
     printer.bold(false);
     printer.drawLine();
 
     printer.alignLeft();
 
-    data.items.forEach(item => {
-      printer.println(
-        `${item.name}  x${item.qty}   ${item.price}`
-      );
-    });
+    if (data.items && Array.isArray(data.items)) {
+      data.items.forEach(item => {
+        printer.println(`${item.name}   x${item.qty}   ${item.price}`);
+      });
+    }
 
     printer.drawLine();
 
     printer.alignRight();
-    printer.println(`TOTAL: ${data.total}`);
+    printer.println(`TOTAL: ${data.total || "0.00"}`);
 
     printer.newLine();
     printer.newLine();
@@ -44,7 +58,7 @@ export async function printReceipt(data) {
 
     await printer.execute();
 
-    return true;
+    return { success: true };
 
   } catch (error) {
     console.error("Printer error:", error);
