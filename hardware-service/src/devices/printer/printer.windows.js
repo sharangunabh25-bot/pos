@@ -3,68 +3,65 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
-const PRINTER_NAME = "EPSON TM-T88V Receipt"; // EXACT name from wmic
+const PRINTER_NAME = "EPSON TM-T88V Receipt"; // must EXACTLY match wmic output
 
 export async function listPrinters() {
   return new Promise((resolve, reject) => {
     exec("wmic printer get name", (err, stdout) => {
       if (err) return reject(err);
+
       const printers = stdout
         .split("\n")
         .slice(1)
         .map(p => p.trim())
         .filter(Boolean);
+
       resolve(printers);
     });
   });
 }
 
 export async function printReceipt(data) {
-  try {
-    const lines = [];
-    lines.push("       POS RECEIPT");
-    lines.push("");
-    lines.push("----------------------------");
+  return new Promise((resolve, reject) => {
+    try {
+      const lines = [];
 
-    for (const item of data.items || []) {
-      lines.push(
-        `${item.name.padEnd(12)} x${item.qty}  ${item.price}`
-      );
-    }
+      lines.push("        POS RECEIPT");
+      lines.push("--------------------------------");
 
-    lines.push("----------------------------");
-    lines.push(`TOTAL: ${data.total}`);
-    lines.push("");
-    lines.push("Thank you!");
-    lines.push("\n\n\n");
+      for (const item of data.items || []) {
+        const name = item.name.padEnd(16, " ");
+        const qty = String(item.qty).padStart(3, " ");
+        const price = String(item.price).padStart(8, " ");
+        lines.push(`${name}${qty}${price}`);
+      }
 
-    const receiptText = lines.join("\n");
+      lines.push("--------------------------------");
+      lines.push(`TOTAL: ${data.total}`);
+      lines.push("");
+      lines.push("Thank you!");
+      lines.push("\n\n\n"); // feed paper
 
-    const tempFile = path.join(os.tmpdir(), `receipt_${Date.now()}.txt`);
-    fs.writeFileSync(tempFile, receiptText, "utf8");
+      const receiptText = lines.join("\n");
 
-    const command = `
-      powershell -Command "
-      $p = Get-Printer -Name '${PRINTER_NAME}';
-      if (!$p) { throw 'Printer not found'; }
-      Start-Process -FilePath notepad.exe -ArgumentList '/p','${tempFile}' -NoNewWindow -Wait
-      "
-    `;
+      const tempFile = path.join(os.tmpdir(), `receipt_${Date.now()}.txt`);
+      fs.writeFileSync(tempFile, receiptText, "utf8");
 
-    return new Promise((resolve, reject) => {
+      // ?? Direct spooler print (correct way)
+      const command = `powershell -Command "Get-Content '${tempFile}' | Out-Printer -Name '${PRINTER_NAME}'"`;
+
       exec(command, (err) => {
+        fs.unlinkSync(tempFile);
+
         if (err) {
-          reject(err);
+          reject(err.toString());
         } else {
           resolve({ success: true });
         }
       });
-    });
 
-  } catch (err) {
-    return {
-      success: false,
-      error: err.message
-    };
-  }
+    } catch (e) {
+      reject(e.toString());
+    }
+  });
 }
