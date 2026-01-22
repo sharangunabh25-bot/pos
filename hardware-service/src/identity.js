@@ -1,23 +1,26 @@
 import fs from "fs";
 import path from "path";
-import crypto from "crypto";
 
 const IDENTITY_PATH = path.resolve("./data/identity.json");
 
 export function loadIdentity() {
-  if (fs.existsSync(IDENTITY_PATH)) {
-    return JSON.parse(fs.readFileSync(IDENTITY_PATH, "utf8"));
+  if (!fs.existsSync(IDENTITY_PATH)) {
+    throw new Error(
+      "❌ identity.json not found. Refusing to generate a new terminal identity.\n" +
+      "This terminal must be provisioned and approved in the cloud first."
+    );
   }
 
-  const identity = {
-    terminal_uid: crypto.randomUUID(),
-    agent_secret: crypto.randomBytes(32).toString("hex")
-  };
+  const raw = fs.readFileSync(IDENTITY_PATH, "utf8");
+  const identity = JSON.parse(raw);
 
-  fs.mkdirSync(path.dirname(IDENTITY_PATH), { recursive: true });
-  fs.writeFileSync(IDENTITY_PATH, JSON.stringify(identity, null, 2));
+  if (!identity.terminal_uid || !identity.agent_secret) {
+    throw new Error(
+      "❌ identity.json is missing terminal_uid or agent_secret.\n" +
+      "Refusing to generate a new identity. Fix or reprovision this terminal."
+    );
+  }
 
-  console.log("���� New terminal identity created:", identity.terminal_uid);
-
+  console.log("✅ Loaded terminal identity:", identity.terminal_uid);
   return identity;
 }
