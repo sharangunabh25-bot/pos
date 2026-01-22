@@ -1,3 +1,30 @@
 [2026-01-22T08:15:39.680Z] POS Hardware Service started
 [2026-01-22T08:15:39.681Z] HTTP server running on port 3001
 [2026-01-22T17:09:18.030Z] Received SIGINT. Shutting down gracefully...
+[2026-01-22T17:10:01.667Z] ���� Booting POS Hardware Agent...
+[2026-01-22T17:10:01.668Z] → Terminal ID: TERM-782D4FE68611
+[2026-01-22T17:10:01.668Z] → Cloud URL: https://pos-agent-33ky.onrender.com
+[2026-01-22T17:10:01.668Z] ���� Registering terminal with cloud...
+[2026-01-22T17:10:01.668Z] → terminal_id: TERM-782D4FE68611
+[2026-01-22T17:10:01.670Z] → hostname: SFMB-POS4
+[2026-01-22T17:10:01.670Z] → platform: win32 10.0.26100
+[2026-01-22T17:10:02.057Z] [ERROR] ❌ Terminal registration error: Unauthorized agent
+[2026-01-22T17:10:02.057Z] ⛔ Agent running in LOCKED mode
+[2026-01-22T17:10:02.057Z]    → Hardware endpoints are disabled
+[2026-01-22T17:10:02.057Z]    → Waiting for store assignment / approval
+[2026-01-22T17:10:02.059Z] POS Hardware Service started
+[2026-01-22T17:10:02.060Z] HTTP server running on port 3001
+[2026-01-22T17:47:57.569Z] Received SIGINT. Shutting down gracefully...
+[2026-01-22T17:48:02.223Z] ���� Booting POS Hardware Agent...
+[2026-01-22T17:48:02.224Z] → Terminal ID: TERM-782D4FE68611
+[2026-01-22T17:48:02.224Z] → Cloud URL: https://pos-agent-33ky.onrender.com
+[2026-01-22T17:48:02.224Z] ���� Registering terminal with cloud...
+[2026-01-22T17:48:02.224Z] → terminal_id: TERM-782D4FE68611
+[2026-01-22T17:48:02.226Z] → hostname: SFMB-POS4
+[2026-01-22T17:48:02.227Z] → platform: win32 10.0.26100
+[2026-01-22T17:48:02.497Z] [ERROR] ❌ Terminal registration error: Unauthorized agent
+[2026-01-22T17:48:02.497Z] ⛔ Agent running in LOCKED mode
+[2026-01-22T17:48:02.497Z]    → Hardware endpoints are disabled
+[2026-01-22T17:48:02.498Z]    → Waiting for store assignment / approval
+[2026-01-22T17:48:02.499Z] POS Hardware Service started
+[2026-01-22T17:48:02.499Z] HTTP server running on port 3001
