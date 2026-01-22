@@ -130,4 +130,59 @@ router.get("/status", verifyAgent, (req, res) => {
   });
 });
 
+router.post("/register", async (req, res) => {
+  const { terminal_id, agent_secret, hostname, platform } = req.body;
+
+  if (!terminal_id || !agent_secret) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing terminal_id or agent_secret"
+    });
+  }
+
+  // 1. Lookup terminal
+  const existing = await db.query(
+    "SELECT * FROM terminals WHERE terminal_id = $1",
+    [terminal_id]
+  );
+
+  let terminal = existing.rows[0];
+
+  // 2. First contact → create LOCKED terminal row
+  if (!terminal) {
+    const insert = await db.query(
+      `INSERT INTO terminals (terminal_id, approved)
+       VALUES ($1, false)
+       RETURNING *`,
+      [terminal_id]
+    );
+
+    terminal = insert.rows[0];
+
+    return res.status(423).json({
+      success: false,
+      message: "Terminal created. Awaiting approval and store assignment.",
+      terminal_id
+    });
+  }
+
+  // 3. Not approved or no store yet
+  if (!terminal.approved || !terminal.store_id) {
+    return res.status(423).json({
+      success: false,
+      message: "Terminal is not approved or store is not assigned",
+      terminal_id
+    });
+  }
+
+  // 4. Approved → allow agent to unlock
+  return res.json({
+    success: true,
+    message: "Terminal approved",
+    terminal_id,
+    store_id: terminal.store_id
+  });
+});
+
+
 export default router;
