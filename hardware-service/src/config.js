@@ -15,7 +15,7 @@ if (!fs.existsSync(CONFIG_PATH)) {
     terminal_id: generateId("TERM"),
     store_id: null,
     agent_secret: crypto.randomBytes(24).toString("hex"),
-    cloud_url: "https://api.yourpos.com"
+    cloud_url: "https://pos-agent-33ky.onrender.com"
   };
 
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
