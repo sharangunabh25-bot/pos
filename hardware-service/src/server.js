@@ -4,6 +4,7 @@ import express from 'express';
 import printerRoutes from './routes/printer.routes.js';
 import scannerRoutes from './routes/scanner.routes.js';
 import scaleRoutes from './routes/scale.routes.js';
+import { verifyAgent } from "./middleware/auth.js";
 
 const app = express();
 
@@ -13,6 +14,8 @@ const app = express();
  * ----------------------------------------------------
  */
 app.use(express.json({ limit: '1mb' }));
+app.use("/api", verifyAgent);
+
 
 /**
  * ----------------------------------------------------
