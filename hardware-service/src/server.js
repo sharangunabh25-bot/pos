@@ -5,9 +5,11 @@ import printerRoutes from './routes/printer.routes.js';
 import scannerRoutes from './routes/scanner.routes.js';
 import scaleRoutes from './routes/scale.routes.js';
 import { verifyAgent } from "./middleware/auth.js";
+import terminalRoutes from "./routes/terminal.routes.js";
 
 const app = express();
 
+app.use("/api/terminal", terminalRoutes);
 /**
  * ----------------------------------------------------
  * Global Middleware
