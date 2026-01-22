@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "terminal_id": "TERM-782D4FE68611",
+  "store_id": null,
+  "agent_secret": "6e072c5a57c82a78907eb2829383757ccbfe8db5da7a95ebe3a5fd5076be3388",
+  "cloud_url": "https://pos-agent-33ky.onrender.com",
+  "registered": false,
+  "approved": false,
+  "created_at": "2026-01-22T17:03:01.643Z",
+  "last_boot_at": "2026-01-22T17:10:01.650Z"
+}

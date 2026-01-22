@@ -1,6 +1,8 @@
 import app from "./server.js";
 import fs from "fs";
 import path from "path";
+import { registerTerminal } from "./register.js";
+import { config } from "./config.js";
 
 // ==============================
 // CONFIG
@@ -25,7 +27,7 @@ function logError(...args) {
   process.stderr.write(msg + "\n");
 }
 
-// Override console for consistency
+// Override console globally for consistency
 console.log = log;
 console.error = logError;
 
@@ -33,7 +35,7 @@ console.error = logError;
 // GLOBAL CRASH PROTECTION
 // ==============================
 process.on("uncaughtException", err => {
-  console.error("Uncaught Exception:", err.stack || err.message || err);
+  console.error("Uncaught Exception:", err?.stack || err?.message || err);
   // Let Servy restart the process
   process.exit(1);
 });
@@ -44,31 +46,62 @@ process.on("unhandledRejection", err => {
 });
 
 // ==============================
-// START SERVER
+// BOOT SEQUENCE
 // ==============================
-const server = app.listen(PORT, () => {
-  console.log("POS Hardware Service started");
-  console.log(`HTTP server running on port ${PORT}`);
-});
+async function boot() {
+  console.log("���� Booting POS Hardware Agent...");
+  console.log("→ Terminal ID:", config.terminal_id);
+  console.log("→ Cloud URL:", config.cloud_url || "NOT SET");
 
-// ==============================
-// GRACEFUL SHUTDOWN (Servy / Windows)
-// ==============================
-function shutdown(signal) {
-  console.log(`Received ${signal}. Shutting down gracefully...`);
+  let approved = false;
 
-  server.close(() => {
-    console.log("HTTP server closed.");
-    process.exit(0);
+  try {
+    approved = await registerTerminal();
+  } catch (err) {
+    console.error("Registration fatal error:", err?.stack || err?.message || err);
+  }
+
+  if (!approved) {
+    console.log("⛔ Agent running in LOCKED mode");
+    console.log("   → Hardware endpoints are disabled");
+    console.log("   → Waiting for store assignment / approval");
+  } else {
+    console.log("���� Agent UNLOCKED — hardware access enabled");
+    console.log("→ Store ID:", config.store_id);
+  }
+
+  // ==============================
+  // START HTTP SERVER
+  // ==============================
+  const server = app.listen(PORT, () => {
+    console.log("POS Hardware Service started");
+    console.log(`HTTP server running on port ${PORT}`);
   });
 
-  // Force exit if it hangs
-  setTimeout(() => {
-    console.error("Force exiting after 5s...");
-    process.exit(1);
-  }, 5000);
+  // ==============================
+  // GRACEFUL SHUTDOWN (Servy / Windows)
+  // ==============================
+  function shutdown(signal) {
+    console.log(`Received ${signal}. Shutting down gracefully...`);
+
+    server.close(() => {
+      console.log("HTTP server closed.");
+      process.exit(0);
+    });
+
+    // Force exit if it hangs
+    setTimeout(() => {
+      console.error("Force exiting after 5s...");
+      process.exit(1);
+    }, 5000);
+  }
+
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
+  process.on("SIGHUP", shutdown);
 }
 
-process.on("SIGTERM", shutdown);
-process.on("SIGINT", shutdown);
-process.on("SIGHUP", shutdown);
+// ==============================
+// START
+// ==============================
+boot();
