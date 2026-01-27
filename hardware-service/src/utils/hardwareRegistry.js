@@ -4,14 +4,8 @@ import path from "path";
 
 const REGISTRY_PATH = path.resolve("./hardware-registry.json");
 
-/* ----------------------------------------------------
-   Internal helpers
----------------------------------------------------- */
 function readRegistry() {
-  if (!fs.existsSync(REGISTRY_PATH)) {
-    return {};
-  }
-
+  if (!fs.existsSync(REGISTRY_PATH)) return {};
   try {
     return JSON.parse(fs.readFileSync(REGISTRY_PATH, "utf8"));
   } catch {
@@ -24,34 +18,38 @@ function writeRegistry(data) {
 }
 
 /* ----------------------------------------------------
-   Public API (NAMED EXPORTS)
+   Register heartbeat
 ---------------------------------------------------- */
-
-export async function registerHeartbeat({ terminal_uid, store_id, hardware_url }) {
+export async function registerHeartbeat({
+  terminal_uid,
+  store_id,
+  hardware_url,
+  agent_secret
+}) {
   const registry = readRegistry();
 
   registry[store_id] = {
     terminal_uid,
     hardware_url,
+    agent_secret,
     last_seen_at: new Date().toISOString()
   };
 
   writeRegistry(registry);
-
   return true;
 }
 
+/* ----------------------------------------------------
+   Resolve active terminal
+---------------------------------------------------- */
 export async function getActiveTerminalForStore(store_id) {
   const registry = readRegistry();
-
   const entry = registry[store_id];
+
   if (!entry) return null;
 
-  // expire dead terminals (5 min)
   const lastSeen = new Date(entry.last_seen_at).getTime();
-  const now = Date.now();
-
-  if (now - lastSeen > 5 * 60 * 1000) {
+  if (Date.now() - lastSeen > 5 * 60 * 1000) {
     delete registry[store_id];
     writeRegistry(registry);
     return null;
