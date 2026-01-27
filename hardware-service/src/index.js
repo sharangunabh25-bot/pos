@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { registerTerminal } from "./register.js";
 import { config } from "./config.js";
-import { startHeartbeat } from "./heartbeat.js"; // ✅ ADD THIS
+import { Heartbeat } from "./heartbeat.js"; // ✅ ADD THIS
 
 // ==============================
 // CONFIG
@@ -72,7 +72,7 @@ async function boot() {
     // ==============================
     // START HEARTBEAT TO CLOUD ✅
     // ==============================
-    startHeartbeat();
+    Heartbeat();
   }
 
   // ==============================
