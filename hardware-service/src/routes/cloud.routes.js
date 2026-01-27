@@ -1,5 +1,5 @@
 import express from "express";
-import { registerTerminal } from "../hardwareRegistry.js";
+import { registerTerminal } from "../utils/hardwareRegistry.js";
 
 const router = express.Router();
 
