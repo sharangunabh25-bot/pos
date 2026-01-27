@@ -1,3 +1,4 @@
+// src/server.js
 import express from "express";
 
 // Route modules
@@ -21,7 +22,7 @@ app.use(express.json({ limit: "1mb" }));
 /**
  * ----------------------------------------------------
  * Agent Diagnostics & Identity
- * (Always accessible – no auth, no lock)
+ * (Always accessible — no auth, no lock)
  * ----------------------------------------------------
  */
 app.get("/agent/status", (req, res) => {
@@ -71,17 +72,17 @@ app.get("/", (req, res) => {
 /**
  * ----------------------------------------------------
  * Terminal Registration / Pairing Routes
- * (Accessible even when locked)
+ * (Always accessible — even when locked)
  * ----------------------------------------------------
  */
 app.use("/api/terminal", terminalRoutes);
 
 /**
  * ----------------------------------------------------
- * ���� LOCK GATE (blocks all hardware routes)
+ * LOCK GATE (hardware only)
  * ----------------------------------------------------
  */
-app.use("/api", (req, res, next) => {
+function lockGate(req, res, next) {
   if (!config.approved || !config.store_id) {
     return res.status(423).json({
       success: false,
@@ -91,29 +92,22 @@ app.use("/api", (req, res, next) => {
   }
 
   next();
-});
+}
 
 /**
  * ----------------------------------------------------
- * ���� Agent Auth Middleware (after lock gate)
- * ----------------------------------------------------
- */
-app.use("/api", verifyAgent);
-
-/**
- * ----------------------------------------------------
- * Hardware Routes
+ * Hardware Routes (protected)
  * ----------------------------------------------------
  */
 
 // Printer (thermal / receipt printer)
-app.use("/api/printer", printerRoutes);
+app.use("/api/printer", lockGate, verifyAgent, printerRoutes);
 
 // Barcode / QR scanner
-app.use("/api/scanner", scannerRoutes);
+app.use("/api/scanner", lockGate, verifyAgent, scannerRoutes);
 
 // Weighing scale
-app.use("/api/scale", scaleRoutes);
+app.use("/api/scale", lockGate, verifyAgent, scaleRoutes);
 
 /**
  * ----------------------------------------------------
