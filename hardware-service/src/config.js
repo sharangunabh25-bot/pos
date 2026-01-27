@@ -79,4 +79,11 @@ try {
   process.exit(1);
 }
 
+/* ----------------------------------------------------
+   TEMP DEBUG — REMOVE AFTER COPYING SECRET
+---------------------------------------------------- */
+
+console.log("���� RENDER AGENT SECRET:", config.agent_secret);
+console.log("���� RENDER TERMINAL UID:", config.terminal_uid);
+
 export { config };
