@@ -1,22 +1,36 @@
-import axios from "axios";
+import fetch from "node-fetch";
+import os from "os";
 import { config } from "./config.js";
 
-export function startHeartbeat() {
-  setInterval(async () => {
-    try {
-      await axios.post(
-        `${config.cloud_url}/api/terminals/heartbeat`,
-        { terminal_id: config.terminal_id },
-        {
-          headers: {
-            "X-Agent-Secret": config.agent_secret
-          }
-        }
-      );
+export async function heartbeat() {
+  try {
+    const res = await fetch(`${config.cloud_url}/api/cloud/heartbeat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-agent-secret": config.agent_secret
+      },
+      body: JSON.stringify({
+        terminal_uid: config.terminal_uid,
+        store_id: config.store_id,
+        ip: getLocalIP()
+      })
+    });
 
-      console.log("Heartbeat OK:", config.terminal_id);
-    } catch (err) {
-      console.warn("Heartbeat failed:", err.message);
+    await res.json();
+  } catch (err) {
+    console.error("Heartbeat failed:", err.message);
+  }
+}
+
+function getLocalIP() {
+  const nets = os.networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === "IPv4" && !net.internal) {
+        return net.address;
+      }
     }
-  }, 15000);
+  }
+  return null;
 }

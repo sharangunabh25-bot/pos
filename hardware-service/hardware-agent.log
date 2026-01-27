@@ -150,3 +150,11 @@
 [2026-01-27T09:58:03.057Z] POS Hardware Service started
 [2026-01-27T09:58:03.058Z] HTTP server running on port 3001
 [2026-01-27T11:32:11.431Z] Received SIGINT. Shutting down gracefully...
+[2026-01-27T11:44:30.624Z] ���� Booting POS Hardware Agent...
+[2026-01-27T11:44:30.624Z] → Terminal ID: TERM-782D4FE68611
+[2026-01-27T11:44:30.624Z] → Cloud URL: https://pos-agent-33ky.onrender.com
+[2026-01-27T11:44:30.625Z] ✅ Terminal already registered & approved: TERM-782D4FE68611
+[2026-01-27T11:44:30.625Z] ���� Agent UNLOCKED — hardware access enabled
+[2026-01-27T11:44:30.626Z] → Store ID: 62dee6e3-81c9-461e-8e92-5b0ef765b437
+[2026-01-27T11:44:30.628Z] POS Hardware Service started
+[2026-01-27T11:44:30.628Z] HTTP server running on port 3001

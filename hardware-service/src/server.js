@@ -6,7 +6,7 @@ import printerRoutes from "./routes/printer.routes.js";
 import scannerRoutes from "./routes/scanner.routes.js";
 import scaleRoutes from "./routes/scale.routes.js";
 import terminalRoutes from "./routes/terminal.routes.js";
-
+import cloudPrinterRoutes from "./routes/cloudPrinter.routes.js";
 import { verifyHardwareAgent } from "./middleware/verifyHardwareAgent.js";
 import { config } from "./config.js";
 
@@ -76,6 +76,15 @@ app.get("/", (req, res) => {
  * ----------------------------------------------------
  */
 app.use("/api/terminal", terminalRoutes);
+
+/**
+ * ----------------------------------------------------
+ * ☁️ CLOUD → HARDWARE PROXY ROUTES
+ * (Frontend calls these)
+ * ----------------------------------------------------
+ */
+app.use("/api/cloud", cloudPrinterRoutes);
+
 
 /**
  * ----------------------------------------------------
