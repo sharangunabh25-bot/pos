@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { registerTerminal } from "./register.js";
 import { config } from "./config.js";
+import { startHeartbeat } from "./heartbeat.js"; // ✅ ADD THIS
 
 // ==============================
 // CONFIG
@@ -36,7 +37,6 @@ console.error = logError;
 // ==============================
 process.on("uncaughtException", err => {
   console.error("Uncaught Exception:", err?.stack || err?.message || err);
-  // Let Servy restart the process
   process.exit(1);
 });
 
@@ -50,8 +50,8 @@ process.on("unhandledRejection", err => {
 // ==============================
 async function boot() {
   console.log("���� Booting POS Hardware Agent...");
-  console.log("→ Terminal ID:", config.terminal_id);
-  console.log("→ Cloud URL:", config.cloud_url || "NOT SET");
+  console.log("���� Terminal ID:", config.terminal_uid); // ✅ FIXED
+  console.log("☁️ Cloud URL:", config.cloud_url || "NOT SET");
 
   let approved = false;
 
@@ -62,20 +62,25 @@ async function boot() {
   }
 
   if (!approved) {
-    console.log("⛔ Agent running in LOCKED mode");
-    console.log("   → Hardware endpoints are disabled");
-    console.log("   → Waiting for store assignment / approval");
+    console.log("���� Agent running in LOCKED mode");
+    console.log("   ⛔ Hardware endpoints are disabled");
+    console.log("   ⏳ Waiting for store assignment / approval");
   } else {
     console.log("���� Agent UNLOCKED — hardware access enabled");
-    console.log("→ Store ID:", config.store_id);
+    console.log("���� Store ID:", config.store_id);
+
+    // ==============================
+    // START HEARTBEAT TO CLOUD ✅
+    // ==============================
+    startHeartbeat();
   }
 
   // ==============================
   // START HTTP SERVER
   // ==============================
   const server = app.listen(PORT, () => {
-    console.log("POS Hardware Service started");
-    console.log(`HTTP server running on port ${PORT}`);
+    console.log("����️ POS Hardware Service started");
+    console.log(`���� HTTP server running on port ${PORT}`);
   });
 
   // ==============================
