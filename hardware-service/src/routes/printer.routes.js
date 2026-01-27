@@ -1,10 +1,12 @@
+// src/routes/printer.routes.js
 import express from "express";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 
-import { requireApprovedTerminal } from "../middleware/requireApprovedTerminal.js";
 import { verifyAgent } from "../middleware/auth.js";
+import { requireOperationalTerminal } from "../middleware/requireOperationalTerminal.js";
+
 import { printReceipt, listPrinters } from "../devices/printer/printer.windows.js";
 import { config } from "../config.js";
 
@@ -23,7 +25,7 @@ const AUDIT_LOG = path.resolve("./printer-jobs.log");
 // 1) cryptographic auth (cloud → agent)
 // 2) terminal approved + store assigned
 router.use(verifyAgent);
-router.use(requireApprovedTerminal);
+router.use(requireOperationalTerminal);
 
 // ==============================
 // HELPERS
@@ -82,7 +84,6 @@ router.get("/list", async (req, res) => {
       store_id: config.store_id,
       printers
     });
-
   } catch (err) {
     console.error("Printer list failed:", err?.message || err);
 
@@ -145,7 +146,6 @@ router.post("/print", async (req, res) => {
       terminal_uid: config.terminal_uid,
       store_id: config.store_id
     });
-
   } catch (err) {
     console.error("Printer failed:", err?.message || err);
 

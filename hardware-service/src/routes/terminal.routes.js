@@ -1,18 +1,23 @@
+// src/routes/terminal.routes.js
 import express from "express";
 import os from "os";
 import crypto from "crypto";
 import fs from "fs";
+
 import { config, CONFIG_PATH } from "../config.js";
 import { verifyAgent } from "../middleware/auth.js";
 
+import { requireRegisteredTerminal } from "../middleware/requireRegisteredTerminal.js";
+import { requireOperationalTerminal } from "../middleware/requireOperationalTerminal.js";
+
+import { db } from "../db.js"; // adjust path if needed
+
 const router = express.Router();
 
-/**
- * ----------------------------------------------------
- * Public: Who Am I (Local debug only)
- * ----------------------------------------------------
- * Safe to expose on LAN — contains NO secrets
- */
+/* ----------------------------------------------------
+   Public: Who Am I (Local debug only)
+---------------------------------------------------- */
+
 router.get("/whoami", (req, res) => {
   res.json({
     terminal_uid: config.terminal_uid || null,
@@ -24,14 +29,10 @@ router.get("/whoami", (req, res) => {
   });
 });
 
-/**
- * ----------------------------------------------------
- * Cloud → Agent: Approve Terminal
- * ----------------------------------------------------
- * Called once from cloud when admin assigns store
- *
- * Requires verifyAgent
- */
+/* ----------------------------------------------------
+   Cloud → Agent: Approve Terminal
+---------------------------------------------------- */
+
 router.post("/approve", verifyAgent, (req, res) => {
   const { store_id } = req.body;
 
@@ -63,12 +64,10 @@ router.post("/approve", verifyAgent, (req, res) => {
   });
 });
 
-/**
- * ----------------------------------------------------
- * Cloud → Agent: Lock Terminal
- * ----------------------------------------------------
- * Used when store is disabled / terminal revoked
- */
+/* ----------------------------------------------------
+   Cloud → Agent: Lock Terminal
+---------------------------------------------------- */
+
 router.post("/lock", verifyAgent, (req, res) => {
   const updated = {
     ...config,
@@ -86,11 +85,10 @@ router.post("/lock", verifyAgent, (req, res) => {
   });
 });
 
-/**
- * ----------------------------------------------------
- * Cloud → Agent: Rotate Secret (Security breach)
- * ----------------------------------------------------
- */
+/* ----------------------------------------------------
+   Cloud → Agent: Rotate Secret
+---------------------------------------------------- */
+
 router.post("/rotate-secret", verifyAgent, (req, res) => {
   const newSecret = crypto.randomBytes(32).toString("hex");
 
@@ -111,11 +109,10 @@ router.post("/rotate-secret", verifyAgent, (req, res) => {
   });
 });
 
-/**
- * ----------------------------------------------------
- * Cloud → Agent: Health Ping
- * ----------------------------------------------------
- */
+/* ----------------------------------------------------
+   Cloud → Agent: Health Ping
+---------------------------------------------------- */
+
 router.get("/status", verifyAgent, (req, res) => {
   res.json({
     success: true,
@@ -130,59 +127,79 @@ router.get("/status", verifyAgent, (req, res) => {
   });
 });
 
-router.post("/register", async (req, res) => {
-  const { terminal_id, agent_secret, hostname, platform } = req.body;
+/* ----------------------------------------------------
+   Cloud → Agent: Register Terminal (bootstrap)
+   Uses requireRegisteredTerminal (NOT operational)
+---------------------------------------------------- */
 
-  if (!terminal_id || !agent_secret) {
-    return res.status(400).json({
-      success: false,
-      message: "Missing terminal_id or agent_secret"
-    });
-  }
+router.post(
+  "/register",
+  requireRegisteredTerminal,
+  async (req, res) => {
+    const { terminal_id } = req.body;
 
-  // 1. Lookup terminal
-  const existing = await db.query(
-    "SELECT * FROM terminals WHERE terminal_id = $1",
-    [terminal_id]
-  );
+    if (!terminal_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing terminal_id"
+      });
+    }
 
-  let terminal = existing.rows[0];
-
-  // 2. First contact → create LOCKED terminal row
-  if (!terminal) {
-    const insert = await db.query(
-      `INSERT INTO terminals (terminal_id, approved)
-       VALUES ($1, false)
-       RETURNING *`,
+    // 1. Lookup terminal in cloud DB
+    const existing = await db.query(
+      "SELECT * FROM terminals WHERE terminal_id = $1",
       [terminal_id]
     );
 
-    terminal = insert.rows[0];
+    let terminal = existing.rows[0];
 
-    return res.status(423).json({
-      success: false,
-      message: "Terminal created. Awaiting approval and store assignment.",
-      terminal_id
+    // 2. First contact → create LOCKED terminal row
+    if (!terminal) {
+      const insert = await db.query(
+        `INSERT INTO terminals (terminal_id, approved)
+         VALUES ($1, false)
+         RETURNING *`,
+        [terminal_id]
+      );
+
+      terminal = insert.rows[0];
+
+      return res.status(423).json({
+        success: false,
+        message: "Terminal created. Awaiting approval and store assignment.",
+        terminal_id
+      });
+    }
+
+    // 3. Not approved or no store yet
+    if (!terminal.approved || !terminal.store_id) {
+      return res.status(423).json({
+        success: false,
+        message: "Terminal is not approved or store is not assigned",
+        terminal_id
+      });
+    }
+
+    // 4. Approved → unlock agent locally
+    const updated = {
+      ...config,
+      store_id: terminal.store_id,
+      approved: true,
+      registered: true
+    };
+
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(updated, null, 2));
+    Object.assign(config, updated);
+
+    console.log("���� Terminal unlocked after cloud approval");
+
+    return res.json({
+      success: true,
+      message: "Terminal approved and unlocked",
+      terminal_id,
+      store_id: terminal.store_id
     });
   }
-
-  // 3. Not approved or no store yet
-  if (!terminal.approved || !terminal.store_id) {
-    return res.status(423).json({
-      success: false,
-      message: "Terminal is not approved or store is not assigned",
-      terminal_id
-    });
-  }
-
-  // 4. Approved → allow agent to unlock
-  return res.json({
-    success: true,
-    message: "Terminal approved",
-    terminal_id,
-    store_id: terminal.store_id
-  });
-});
-
+);
 
 export default router;

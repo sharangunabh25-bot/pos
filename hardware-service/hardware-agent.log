@@ -121,3 +121,22 @@
 [2026-01-22T20:56:37.271Z] → Store ID: 62dee6e3-81c9-461e-8e92-5b0ef765b437
 [2026-01-22T20:56:37.273Z] POS Hardware Service started
 [2026-01-22T20:56:37.273Z] HTTP server running on port 3001
+[2026-01-23T07:29:06.290Z] Received SIGINT. Shutting down gracefully...
+[2026-01-23T07:29:10.839Z] ���� Booting POS Hardware Agent...
+[2026-01-23T07:29:10.840Z] → Terminal ID: 
+[2026-01-23T07:29:10.840Z] → Cloud URL: https://pos-agent-33ky.onrender.com
+[2026-01-23T07:29:10.840Z] [ERROR] ❌ Terminal registration error: Missing terminal identity or agent secret
+[2026-01-23T07:29:10.840Z] ⛔ Agent running in LOCKED mode
+[2026-01-23T07:29:10.841Z]    → Hardware endpoints are disabled
+[2026-01-23T07:29:10.841Z]    → Waiting for store assignment / approval
+[2026-01-23T07:29:10.843Z] POS Hardware Service started
+[2026-01-23T07:29:10.844Z] HTTP server running on port 3001
+[2026-01-23T07:41:42.744Z] Received SIGINT. Shutting down gracefully...
+[2026-01-23T07:41:46.627Z] ���� Booting POS Hardware Agent...
+[2026-01-23T07:41:46.627Z] → Terminal ID: TERM-782D4FE68611
+[2026-01-23T07:41:46.627Z] → Cloud URL: https://pos-agent-33ky.onrender.com
+[2026-01-23T07:41:46.627Z] ✅ Terminal already registered & approved: TERM-782D4FE68611
+[2026-01-23T07:41:46.628Z] ���� Agent UNLOCKED — hardware access enabled
+[2026-01-23T07:41:46.628Z] → Store ID: 62dee6e3-81c9-461e-8e92-5b0ef765b437
+[2026-01-23T07:41:46.631Z] POS Hardware Service started
+[2026-01-23T07:41:46.631Z] HTTP server running on port 3001
