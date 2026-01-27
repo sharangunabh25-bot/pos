@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 
 const REGISTRY_PATH = path.resolve("./hardware-registry.json");
+console.log("���� Registry path:", REGISTRY_PATH);
+
 
 function readRegistry() {
   if (!fs.existsSync(REGISTRY_PATH)) return {};
