@@ -36,7 +36,8 @@ router.post("/heartbeat", async (req, res) => {
     await registerHeartbeat({
       terminal_uid,
       store_id,
-      hardware_url
+      hardware_url,
+      agent_secret
     });
 
     res.json({ success: true });
@@ -69,7 +70,7 @@ router.get("/printer/list", async (req, res) => {
       });
     }
 
-    const { terminal_uid, hardware_url } = terminal;
+    const { terminal_uid, hardware_url, agent_secret } = terminal;
 
     const hardwareRes = await fetch(
       `${hardware_url}/api/printer/list`,
@@ -78,7 +79,7 @@ router.get("/printer/list", async (req, res) => {
         headers: {
           "Content-Type": "application/json",
           "x-terminal-id": terminal_uid,
-          "x-agent-secret": process.env.AGENT_SECRET_FALLBACK || "" // optional
+          "x-agent-secret": agent_secret
         }
       }
     );

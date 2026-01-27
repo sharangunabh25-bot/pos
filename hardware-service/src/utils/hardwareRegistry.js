@@ -17,9 +17,6 @@ function writeRegistry(data) {
   fs.writeFileSync(REGISTRY_PATH, JSON.stringify(data, null, 2));
 }
 
-/* ----------------------------------------------------
-   Register heartbeat
----------------------------------------------------- */
 export async function registerHeartbeat({
   terminal_uid,
   store_id,
@@ -39,9 +36,6 @@ export async function registerHeartbeat({
   return true;
 }
 
-/* ----------------------------------------------------
-   Resolve active terminal
----------------------------------------------------- */
 export async function getActiveTerminalForStore(store_id) {
   const registry = readRegistry();
   const entry = registry[store_id];
