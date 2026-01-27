@@ -32,7 +32,7 @@ export function verifyAgent(req, res, next) {
         message: "Terminal identity not initialized"
       });
     }
-
+    
     if (!config.registered || !config.approved || !config.store_id) {
       return res.status(423).json({
         success: false,

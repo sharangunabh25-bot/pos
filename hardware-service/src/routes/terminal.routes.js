@@ -5,7 +5,7 @@ import crypto from "crypto";
 import fs from "fs";
 
 import { config, CONFIG_PATH } from "../config.js";
-import { verifyAgent } from "../middleware/auth.js";
+import { verifyCloudAgent } from "../middleware/verifyCloudAgent.js";
 import { requireRegisteredTerminal } from "../middleware/requireRegisteredTerminal.js";
 
 const router = express.Router();
@@ -74,7 +74,7 @@ router.post("/register", requireRegisteredTerminal, async (req, res) => {
    CLOUD → AGENT — cryptographic auth
 ---------------------------------------------------- */
 
-router.post("/approve", verifyAgent, (req, res) => {
+router.post("/approve", verifyCloudAgent, (req, res) => {
   const { store_id } = req.body;
 
   if (!store_id) {
@@ -102,7 +102,7 @@ router.post("/approve", verifyAgent, (req, res) => {
   });
 });
 
-router.get("/status", verifyAgent, (req, res) => {
+router.get("/status", verifyCloudAgent, (req, res) => {
   res.json({
     success: true,
     terminal_uid: config.terminal_uid,

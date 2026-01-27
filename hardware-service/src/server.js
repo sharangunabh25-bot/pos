@@ -7,7 +7,7 @@ import scannerRoutes from "./routes/scanner.routes.js";
 import scaleRoutes from "./routes/scale.routes.js";
 import terminalRoutes from "./routes/terminal.routes.js";
 
-import { verifyAgent } from "./middleware/auth.js";
+import { verifyHardwareAgent } from "./middleware/verifyHardwareAgent.js";
 import { config } from "./config.js";
 
 const app = express();
@@ -101,13 +101,13 @@ function lockGate(req, res, next) {
  */
 
 // Printer (thermal / receipt printer)
-app.use("/api/printer", lockGate, verifyAgent, printerRoutes);
+app.use("/api/printer", lockGate, verifyHardwareAgent, printerRoutes);
 
 // Barcode / QR scanner
-app.use("/api/scanner", lockGate, verifyAgent, scannerRoutes);
+app.use("/api/scanner", lockGate, verifyHardwareAgent, scannerRoutes);
 
 // Weighing scale
-app.use("/api/scale", lockGate, verifyAgent, scaleRoutes);
+app.use("/api/scale", lockGate, verifyHardwareAgent, scaleRoutes);
 
 /**
  * ----------------------------------------------------
