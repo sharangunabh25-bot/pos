@@ -1,106 +1,95 @@
 // src/routes/cloudPrinter.routes.js
 import express from "express";
 import fetch from "node-fetch";
-import { config } from "../config.js";
-import { registerHeartbeat, getActiveTerminalForStore } from "../utils/hardwareRegistry.js";
+
+import {
+  registerHeartbeat,
+  getActiveTerminalForStore
+} from "../utils/hardwareRegistry.js";
 
 const router = express.Router();
 
 /* ----------------------------------------------------
-   HEARTBEAT — hardware → cloud
+   HEARTBEAT — hardware agent calls this
 ---------------------------------------------------- */
 router.post("/heartbeat", async (req, res) => {
-  const { store_id, hardware_url } = req.body;
+  try {
+    const terminal_uid = req.headers["x-terminal-id"];
+    const agent_secret = req.headers["x-agent-secret"];
 
-  if (!store_id || !hardware_url) {
-    return res.status(400).json({
-      success: false,
-      message: "store_id and hardware_url are required"
+    const { store_id, hardware_url } = req.body;
+
+    if (!terminal_uid || !agent_secret) {
+      return res.status(401).json({
+        success: false,
+        message: "Missing authentication headers"
+      });
+    }
+
+    if (!store_id || !hardware_url) {
+      return res.status(400).json({
+        success: false,
+        message: "store_id and hardware_url are required"
+      });
+    }
+
+    await registerHeartbeat({
+      terminal_uid,
+      store_id,
+      hardware_url
     });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Heartbeat error:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
-
-  await registerHeartbeat({
-    terminal_uid: config.terminal_uid,
-    store_id,
-    hardware_url
-  });
-
-  return res.json({
-    success: true,
-    message: "Heartbeat registered",
-    terminal_uid: config.terminal_uid,
-    store_id,
-    hardware_url
-  });
 });
 
 /* ----------------------------------------------------
-   CLOUD → HARDWARE : LIST PRINTERS
+   CLOUD → HARDWARE PROXY — printer list
 ---------------------------------------------------- */
 router.get("/printer/list", async (req, res) => {
-  const storeId = req.headers["x-store-id"];
+  try {
+    const store_id = req.headers["x-store-id"];
 
-  if (!storeId) {
-    return res.status(400).json({
-      success: false,
-      message: "x-store-id header is required"
-    });
-  }
-
-  const terminal = await getActiveTerminalForStore(storeId);
-
-  if (!terminal) {
-    return res.status(404).json({
-      success: false,
-      message: "No active terminal for store"
-    });
-  }
-
-  const resp = await fetch(`${terminal.hardware_url}/api/printer/list`, {
-    headers: {
-      "x-terminal-id": terminal.terminal_uid,
-      "x-agent-secret": config.agent_secret
+    if (!store_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing x-store-id header"
+      });
     }
-  });
 
-  const data = await resp.json();
-  return res.json(data);
-});
+    const terminal = await getActiveTerminalForStore(store_id);
 
-/* ----------------------------------------------------
-   CLOUD → HARDWARE : PRINT
----------------------------------------------------- */
-router.post("/printer/print", async (req, res) => {
-  const storeId = req.headers["x-store-id"];
+    if (!terminal) {
+      return res.status(404).json({
+        success: false,
+        message: "No active terminal for store"
+      });
+    }
 
-  if (!storeId) {
-    return res.status(400).json({
-      success: false,
-      message: "x-store-id header is required"
-    });
+    const { terminal_uid, hardware_url } = terminal;
+
+    const hardwareRes = await fetch(
+      `${hardware_url}/api/printer/list`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-terminal-id": terminal_uid,
+          "x-agent-secret": process.env.AGENT_SECRET_FALLBACK || "" // optional
+        }
+      }
+    );
+
+    const data = await hardwareRes.json();
+
+    res.status(hardwareRes.status).json(data);
+  } catch (err) {
+    console.error("Cloud printer list error:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
-
-  const terminal = await getActiveTerminalForStore(storeId);
-
-  if (!terminal) {
-    return res.status(404).json({
-      success: false,
-      message: "No active terminal for store"
-    });
-  }
-
-  const resp = await fetch(`${terminal.hardware_url}/api/printer/print`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-terminal-id": terminal.terminal_uid,
-      "x-agent-secret": config.agent_secret
-    },
-    body: JSON.stringify(req.body)
-  });
-
-  const data = await resp.json();
-  return res.json(data);
 });
 
 export default router;
