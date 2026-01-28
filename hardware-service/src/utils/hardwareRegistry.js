@@ -1,55 +1,100 @@
-// src/utils/hardwareRegistry.js
-import fs from "fs";
-import path from "path";
+import { query } from "../db.js";
 
-const REGISTRY_PATH = path.resolve("./hardware-registry.json");
-console.log("���� Registry path:", REGISTRY_PATH);
-
-
-function readRegistry() {
-  if (!fs.existsSync(REGISTRY_PATH)) return {};
-  try {
-    return JSON.parse(fs.readFileSync(REGISTRY_PATH, "utf8"));
-  } catch {
-    return {};
-  }
-}
-
-function writeRegistry(data) {
-  fs.writeFileSync(REGISTRY_PATH, JSON.stringify(data, null, 2));
-}
-
+/**
+ * Register / update heartbeat from hardware agent
+ */
 export async function registerHeartbeat({
   terminal_uid,
   store_id,
   hardware_url,
   agent_secret
 }) {
-  const registry = readRegistry();
+  await query(
+    `
+    INSERT INTO active_terminals (
+      store_id,
+      terminal_uid,
+      hardware_url,
+      agent_secret,
+      last_seen_at
+    )
+    VALUES ($1, $2, $3, $4, NOW())
+    ON CONFLICT (store_id)
+    DO UPDATE SET
+      terminal_uid = EXCLUDED.terminal_uid,
+      hardware_url = EXCLUDED.hardware_url,
+      agent_secret = EXCLUDED.agent_secret,
+      last_seen_at = NOW()
+    `,
+    [store_id, terminal_uid, hardware_url, agent_secret]
+  );
 
-  registry[store_id] = {
-    terminal_uid,
-    hardware_url,
-    agent_secret,
-    last_seen_at: new Date().toISOString()
-  };
-
-  writeRegistry(registry);
   return true;
 }
 
+/**
+ * Get active terminal for store (last 5 minutes)
+ */
 export async function getActiveTerminalForStore(store_id) {
-  const registry = readRegistry();
-  const entry = registry[store_id];
+  const { rows } = await query(
+    `
+    SELECT terminal_uid, hardware_url, agent_secret, last_seen_at
+    FROM active_terminals
+    WHERE store_id = $1
+      AND last_seen_at > NOW() - INTERVAL '5 minutes'
+    `,
+    [store_id]
+  );
 
-  if (!entry) return null;
+  return rows[0] || null;
+}
+import { query } from "../db.js";
 
-  const lastSeen = new Date(entry.last_seen_at).getTime();
-  if (Date.now() - lastSeen > 5 * 60 * 1000) {
-    delete registry[store_id];
-    writeRegistry(registry);
-    return null;
-  }
+/**
+ * Register / update heartbeat from hardware agent
+ */
+export async function registerHeartbeat({
+  terminal_uid,
+  store_id,
+  hardware_url,
+  agent_secret
+}) {
+  await query(
+    `
+    INSERT INTO active_terminals (
+      store_id,
+      terminal_uid,
+      hardware_url,
+      agent_secret,
+      last_seen_at
+    )
+    VALUES ($1, $2, $3, $4, NOW())
+    ON CONFLICT (store_id)
+    DO UPDATE SET
+      terminal_uid = EXCLUDED.terminal_uid,
+      hardware_url = EXCLUDED.hardware_url,
+      agent_secret = EXCLUDED.agent_secret,
+      last_seen_at = NOW()
+    `,
+    [store_id, terminal_uid, hardware_url, agent_secret]
+  );
 
-  return entry;
+  return true;
+}
+
+/**
+ * Get active terminal for store (last 5 minutes)
+ */
+export async function getActiveTerminalForStore(store_id) {
+  const { rows } = await query(
+    `
+    SELECT terminal_uid, hardware_url, agent_secret, last_seen_at
+    FROM active_terminals
+    WHERE store_id = $1
+      AND last_seen_at > NOW() - INTERVAL '5 minutes'
+    `,
+    [store_id]
+  );
+
+  return rows[0] || null;
 }
