@@ -24,7 +24,6 @@ let config = {
 /* ----------------------------------------------------
    Load existing config if present
 ---------------------------------------------------- */
-
 if (fs.existsSync(CONFIG_PATH)) {
   try {
     const loaded = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
@@ -38,7 +37,6 @@ if (fs.existsSync(CONFIG_PATH)) {
 /* ----------------------------------------------------
    Generate identity if missing
 ---------------------------------------------------- */
-
 let identityCreated = false;
 
 if (!config.terminal_uid) {
@@ -59,17 +57,14 @@ if (!config.created_at) {
 /* ----------------------------------------------------
    Persist identity if newly created
 ---------------------------------------------------- */
-
 if (identityCreated) {
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
-
-  console.log("���� New terminal identity created:", config.terminal_uid);
+  console.log("���� New hardware terminal identity created:", config.terminal_uid);
 }
 
 /* ----------------------------------------------------
    Update boot timestamp (every start)
 ---------------------------------------------------- */
-
 config.last_boot_at = new Date().toISOString();
 
 try {
@@ -80,10 +75,9 @@ try {
 }
 
 /* ----------------------------------------------------
-   TEMP DEBUG — REMOVE AFTER COPYING SECRET
+   ⚠️ TEMP DEBUG — REMOVE AFTER COPYING SECRET
 ---------------------------------------------------- */
-
-console.log("���� RENDER AGENT SECRET:", config.agent_secret);
-console.log("���� RENDER TERMINAL UID:", config.terminal_uid);
+console.log("���� HARDWARE AGENT SECRET:", config.agent_secret);
+console.log("����️ HARDWARE TERMINAL UID:", config.terminal_uid);
 
 export { config };
