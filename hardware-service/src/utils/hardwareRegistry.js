@@ -29,6 +29,13 @@ export async function registerHeartbeat({
   return true;
 }
 
+export async function cleanupStaleTerminals() {
+  await query(`
+    DELETE FROM active_terminals
+    WHERE last_seen_at < NOW() - INTERVAL '5 minutes'
+  `);
+}
+
 /**
  * Get active terminal (5-minute TTL)
  */
