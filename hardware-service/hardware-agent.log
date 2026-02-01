@@ -203,3 +203,4 @@
 [2026-01-28T10:27:21.713Z] ���� Store ID: 62dee6e3-81c9-461e-8e92-5b0ef765b437
 [2026-01-28T10:27:21.735Z] ����️ POS Hardware Service started
 [2026-01-28T10:27:21.735Z] ���� HTTP server running on port 3001
+[2026-02-01T12:22:46.163Z] Received SIGINT. Shutting down gracefully...
