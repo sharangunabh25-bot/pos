@@ -9,8 +9,10 @@ import cloudPrinterRoutes from "./routes/cloudPrinter.routes.js";
 
 import { verifyHardwareAgent } from "./middleware/verifyHardwareAgent.js";
 import { config } from "./config.js";
+import { heartbeat } from "./heartbeat.js"; // ���� ADD THIS
 
 const app = express();
+const PORT = 3001;
 
 app.use(express.json({ limit: "1mb" }));
 
@@ -21,7 +23,8 @@ app.get("/health", (req, res) => {
   res.json({
     status: "OK",
     approved: !!config.approved,
-    store_id: config.store_id || null
+    store_id: config.store_id || null,
+    hardware_url: process.env.NGROK_URL || null
   });
 });
 
@@ -56,13 +59,16 @@ app.use("/api/scanner", lockGate, verifyHardwareAgent, scannerRoutes);
 app.use("/api/scale", lockGate, verifyHardwareAgent, scaleRoutes);
 
 /* ----------------------------------------------------
-   404
+   START HARDWARE AGENT SERVER  ✅
 ---------------------------------------------------- */
-app.use((req, res) => {
-  res.status(404).json({
-    error: "Route not found",
-    path: req.originalUrl
-  });
+app.listen(PORT, () => {
+  console.log(`����️ Hardware Agent running on port ${PORT}`);
+  console.log("���� NGROK URL:", process.env.NGROK_URL);
 });
 
-export default app;
+/* ----------------------------------------------------
+   HEARTBEAT LOOP  ✅
+---------------------------------------------------- */
+setInterval(async () => {
+  await heartbeat();
+}, 10_000);
