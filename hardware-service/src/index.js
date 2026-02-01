@@ -1,6 +1,6 @@
 import app from "./server.js";
 import { cleanupStaleTerminals } from "./utils/hardwareRegistry.js";
-import { db } from "./db.js"; // assuming you export db
+
 
 const PORT = process.env.PORT || 3000;
 
