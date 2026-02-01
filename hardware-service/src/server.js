@@ -72,3 +72,5 @@ app.listen(PORT, () => {
 setInterval(async () => {
   await heartbeat();
 }, 10_000);
+
+export default app;
