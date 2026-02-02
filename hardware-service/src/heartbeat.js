@@ -1,30 +1,16 @@
-// src/heartbeat.js
 import fetch from "node-fetch";
-import { config } from "./config.js";
+import fs from "fs";
+import { config, CONFIG_PATH } from "./config.js";
 
 export async function heartbeat() {
   try {
-    console.log("❤️ [HEARTBEAT] Starting heartbeat");
-
-    // 1. ENV CHECK
-    console.log("���� [HEARTBEAT] ENV NGROK_URL:", process.env.NGROK_URL);
-    console.log("���� [HEARTBEAT] cloud_url:", config.cloud_url);
-    console.log("���� [HEARTBEAT] terminal_uid:", config.terminal_uid);
-    console.log("���� [HEARTBEAT] store_id:", config.store_id);
-
     if (!process.env.NGROK_URL) {
-      throw new Error("NGROK_URL is not set in hardware agent");
+      throw new Error("NGROK_URL not set");
     }
 
-    // 2. PAYLOAD PREVIEW
-    const payload = {
-      store_id: config.store_id,
-      hardware_url: process.env.NGROK_URL
-    };
+    console.log("���� [HEARTBEAT] Sending heartbeat");
+    console.log("[HEARTBEAT] NGROK:", process.env.NGROK_URL);
 
-    console.log("���� [HEARTBEAT] Payload:", payload);
-
-    // 3. SEND HEARTBEAT
     const res = await fetch(
       `${config.cloud_url}/api/cloud/heartbeat`,
       {
@@ -34,16 +20,36 @@ export async function heartbeat() {
           "x-terminal-id": config.terminal_uid,
           "x-agent-secret": config.agent_secret
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          store_id: config.store_id,
+          hardware_url: process.env.NGROK_URL
+        })
       }
     );
 
-    console.log("���� [HEARTBEAT] HTTP status:", res.status);
-
     const data = await res.json();
-    console.log("✅ [HEARTBEAT] Cloud response:", data);
+    console.log("[HEARTBEAT] Cloud response:", data);
+
+    /* ----------------------------------------------------
+       OPTION B – APPLY APPROVAL LOCALLY
+    ---------------------------------------------------- */
+    if (data.approved && data.store_id) {
+      if (!config.approved) {
+        console.log("���� [HEARTBEAT] Applying approval locally");
+
+        config.approved = true;
+        config.store_id = data.store_id;
+
+        fs.writeFileSync(
+          CONFIG_PATH,
+          JSON.stringify(config, null, 2)
+        );
+
+        console.log("✅ [HEARTBEAT] Terminal unlocked");
+      }
+    }
 
   } catch (err) {
-    console.error("❌ [HEARTBEAT] Failed:", err);
+    console.error("❌ [HEARTBEAT] Failed:", err.message);
   }
 }
