@@ -187,4 +187,62 @@ router.get("/printer/list", async (req, res) => {
   }
 });
 
+/* ----------------------------------------------------
+   CLOUD → HARDWARE (printer print)
+---------------------------------------------------- */
+router.post("/printer/print", async (req, res) => {
+  console.log("����️ [CLOUD] Printer print request received");
+
+  try {
+    const store_id = req.headers["x-store-id"];
+    if (!store_id) {
+      console.error("❌ [CLOUD] Missing x-store-id header");
+      return res.status(400).json({
+        success: false,
+        message: "Missing x-store-id"
+      });
+    }
+
+    console.log("���� [CLOUD] Resolving active terminal for store:", store_id);
+    const terminal = await getActiveTerminalForStore(store_id);
+
+    if (!terminal) {
+      console.error("❌ [CLOUD] No active terminal found");
+      return res.status(404).json({
+        success: false,
+        message: "No active terminal"
+      });
+    }
+
+    const { terminal_uid, hardware_url, agent_secret } = terminal;
+    const targetUrl = `${hardware_url}/api/printer/print`;
+
+    console.log("➡️ [CLOUD] Forwarding print job to:", targetUrl);
+
+    const hardwareRes = await fetch(targetUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-terminal-id": terminal_uid,
+        "x-agent-secret": agent_secret
+      },
+      body: JSON.stringify(req.body),
+      timeout: 15_000
+    });
+
+    const data = await hardwareRes.json();
+
+    console.log("✅ [CLOUD] Hardware print response received");
+    return res.status(hardwareRes.status).json(data);
+
+  } catch (err) {
+    console.error("���� [CLOUD] Print forwarding failed:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+
 export default router;
