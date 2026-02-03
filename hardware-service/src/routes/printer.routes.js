@@ -4,11 +4,10 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 
-import { verifyAgent } from "../middleware/auth.js";
 import { requireOperationalTerminal } from "../middleware/requireOperationalTerminal.js";
-
 import { printReceipt, listPrinters } from "../devices/printer/printer.windows.js";
 import { config } from "../config.js";
+import logger from "../utils/logger.js";
 
 const router = express.Router();
 
@@ -20,11 +19,8 @@ const AUDIT_LOG = path.resolve("./printer-jobs.log");
 // ==============================
 // MIDDLEWARE
 // ==============================
-
-// All printer routes require:
-// 1) cryptographic auth (cloud → agent)
-// 2) terminal approved + store assigned
-router.use(verifyAgent);
+// Printer routes use requireOperationalTerminal (x-terminal-id + x-agent-secret)
+// so cloud can forward with same headers. App-level verifyHardwareAgent runs first.
 router.use(requireOperationalTerminal);
 
 // ==============================
@@ -112,9 +108,13 @@ function validatePrintPayload(body) {
  * Lists printers visible to THIS terminal only
  */
 router.get("/list", async (req, res) => {
+  logger.info("[PRINTER] GET /list request", {
+    terminal_uid: config.terminal_uid,
+    has_terminal: !!req.terminal
+  });
   try {
     const printers = await listPrinters();
-
+    logger.info("[PRINTER] List success", { count: printers?.length ?? 0 });
     res.json({
       success: true,
       terminal_uid: config.terminal_uid,
@@ -122,8 +122,7 @@ router.get("/list", async (req, res) => {
       printers
     });
   } catch (err) {
-    console.error("Printer list failed:", err?.message || err);
-
+    logger.error("[PRINTER] List failed", err?.message || err);
     res.status(500).json({
       success: false,
       message: "Failed to list printers",
@@ -140,12 +139,18 @@ router.get("/list", async (req, res) => {
  */
 router.post("/print", async (req, res) => {
   const jobId = crypto.randomUUID();
+  logger.info("[PRINTER] POST /print request", {
+    job_id: jobId,
+    terminal_uid: config.terminal_uid,
+    body_keys: req.body ? Object.keys(req.body) : []
+  });
 
   try {
     // 1) Normalize (coerce string numbers) then validate
     const payload = normalizePrintPayload(req.body);
     const error = validatePrintPayload(payload);
     if (error) {
+      logger.warn("[PRINTER] Print validation failed", { error, job_id: jobId });
       return res.status(400).json({
         success: false,
         message: "Invalid print payload",
@@ -162,10 +167,8 @@ router.post("/print", async (req, res) => {
     };
 
     // 3) Log before printing (idempotency trace)
-    logJob({
-      ...job,
-      status: "QUEUED"
-    });
+    logJob({ ...job, status: "QUEUED" });
+    logger.info("[PRINTER] Sending to device", { job_id: jobId });
 
     // 4) Execute print
     await printReceipt(payload);
@@ -177,6 +180,7 @@ router.post("/print", async (req, res) => {
       store_id: config.store_id,
       status: "PRINTED"
     });
+    logger.info("[PRINTER] Print success", { job_id: jobId });
 
     res.json({
       success: true,
@@ -185,9 +189,7 @@ router.post("/print", async (req, res) => {
       store_id: config.store_id
     });
   } catch (err) {
-    console.error("Printer failed:", err?.message || err);
-
-    // Log failure
+    logger.error("[PRINTER] Print failed", { job_id: jobId, error: err?.message || err });
     logJob({
       job_id: jobId,
       terminal_uid: config.terminal_uid,
@@ -195,7 +197,6 @@ router.post("/print", async (req, res) => {
       status: "FAILED",
       error: err.message
     });
-
     res.status(500).json({
       success: false,
       message: "Printer failed",

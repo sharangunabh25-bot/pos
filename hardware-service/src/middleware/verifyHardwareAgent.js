@@ -1,27 +1,23 @@
 // src/middleware/verifyHardwareAgent.js
 import { config } from "../config.js";
+import logger from "../utils/logger.js";
 
 export function verifyHardwareAgent(req, res, next) {
   const terminalId = req.headers["x-terminal-id"];
   const agentSecret = req.headers["x-agent-secret"];
 
-  console.log("���� [HARDWARE AUTH] Incoming request");
-  console.log("���� [HARDWARE AUTH] Headers received:", {
-    "x-terminal-id": terminalId || "❌ MISSING",
-    "x-agent-secret": agentSecret ? "✅ PRESENT" : "❌ MISSING",
+  logger.info("[HARDWARE AUTH] Incoming request", {
     path: req.originalUrl,
-    method: req.method
+    method: req.method,
+    has_x_terminal_id: !!terminalId,
+    has_x_agent_secret: !!agentSecret
   });
 
-  /* ----------------------------------------------------
-     Step 1: Header presence check
-  ---------------------------------------------------- */
   if (!terminalId || !agentSecret) {
-    console.error("❌ [HARDWARE AUTH] Authentication headers missing", {
+    logger.error("[HARDWARE AUTH] Missing headers", {
       terminalIdPresent: !!terminalId,
       agentSecretPresent: !!agentSecret
     });
-
     return res.status(401).json({
       success: false,
       message: "Missing authentication headers",
@@ -32,26 +28,16 @@ export function verifyHardwareAgent(req, res, next) {
     });
   }
 
-  /* ----------------------------------------------------
-     Step 2: Log expected vs received (NO hard fail)
-     (Cloud already validated identity)
-  ---------------------------------------------------- */
-  console.log("���� [HARDWARE AUTH] Validation context", {
+  logger.info("[HARDWARE AUTH] Validation", {
     receivedTerminalId: terminalId,
     expectedTerminalId: config.terminal_uid,
-    secretMatch: agentSecret === config.agent_secret
-      ? "MATCH"
-      : "NOT_MATCHING (allowed)"
+    secretMatch: agentSecret === config.agent_secret ? "MATCH" : "MISMATCH"
   });
 
-  /* ----------------------------------------------------
-     Step 3: Attach terminal context
-  ---------------------------------------------------- */
   req.terminal = {
     terminal_uid: terminalId,
     store_id: config.store_id || null
   };
-
-  console.log("✅ [HARDWARE AUTH] Authentication passed");
+  logger.info("[HARDWARE AUTH] Passed");
   next();
 }

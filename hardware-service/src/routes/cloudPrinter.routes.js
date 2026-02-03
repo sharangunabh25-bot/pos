@@ -4,6 +4,7 @@ import {
   registerHeartbeat,
   getActiveTerminalForStore
 } from "../utils/hardwareRegistry.js";
+import logger from "../utils/logger.js";
 
 const router = express.Router();
 
@@ -228,8 +229,7 @@ router.post("/printer/print", async (req, res) => {
     const { terminal_uid, hardware_url, agent_secret } = terminal;
     const targetUrl = `${hardware_url}/api/printer/print`;
 
-    console.log("➡️ [CLOUD] Forwarding print job to:", targetUrl);
-
+    logger.info("[CLOUD PRINTER] Forwarding print to hardware", { targetUrl, terminal_uid });
     const hardwareRes = await fetch(targetUrl, {
       method: "POST",
       headers: {
@@ -243,7 +243,7 @@ router.post("/printer/print", async (req, res) => {
 
     const data = await hardwareRes.json();
 
-    console.log("✅ [CLOUD] Hardware print response received");
+    logger.info("[CLOUD PRINTER] Hardware print response", { status: hardwareRes.status, success: data?.success });
     return res.status(hardwareRes.status).json(data);
 
   } catch (err) {
