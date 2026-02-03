@@ -1,0 +1,2 @@
+{"job_id":"8d6d541b-024b-4187-aea1-46ec8db909c9","terminal_uid":"TERM-2B02D153AF6C","store_id":"62dee6e3-81c9-461e-8e92-5b0ef765b437","receipt":{"title":"LIVE POS TEST","items":[{"name":"Coffee","qty":1,"price":50},{"name":"Burger","qty":2,"price":120},{"name":"Maggi","qty":2,"price":120}],"total":290},"status":"QUEUED","timestamp":"2026-02-03T13:20:36.870Z"}
+{"job_id":"8d6d541b-024b-4187-aea1-46ec8db909c9","terminal_uid":"TERM-2B02D153AF6C","store_id":"62dee6e3-81c9-461e-8e92-5b0ef765b437","status":"PRINTED","timestamp":"2026-02-03T13:20:37.582Z"}

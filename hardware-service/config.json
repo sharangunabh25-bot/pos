@@ -7,6 +7,10 @@
   "registered": true,
   "approved": true,
   "created_at": "2026-01-23T07:41:46.614Z",
-  "last_boot_at": "2026-02-02T14:09:19.609Z",
+  "last_boot_at": "2026-02-03T13:20:13.121Z",
+  "scale_serial_path": "COM3",
+  "scale_baud_rate": 9600,
+  "cash_drawer_serial_path": "COM5",
+  "cash_drawer_baud_rate": 9600,
   "terminal_id": "TERM-782D4FE68611"
 }
