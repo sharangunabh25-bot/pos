@@ -2,9 +2,14 @@ import express from "express";
 import printerRoutes from "./routes/printer.routes.js";
 import scannerRoutes from "./routes/scanner.routes.js";
 import scaleRoutes from "./routes/scale.routes.js";
+import cashDrawerRoutes from "./routes/cashDrawer.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
+import keyboardRoutes from "./routes/keyboard.routes.js";
+import displayRoutes from "./routes/display.routes.js";
 import { verifyHardwareAgent } from "./middleware/verifyHardwareAgent.js";
 import { heartbeat } from "./heartbeat.js";
 import { config } from "./config.js";
+import { initScale } from "./devices/scale/scale.service.js";
 
 const app = express();
 app.use(express.json());
@@ -41,6 +46,18 @@ function lockGate(req, res, next) {
 app.use("/api/printer", lockGate, verifyHardwareAgent, printerRoutes);
 app.use("/api/scanner", lockGate, verifyHardwareAgent, scannerRoutes);
 app.use("/api/scale", lockGate, verifyHardwareAgent, scaleRoutes);
+app.use("/api/cash-drawer", lockGate, verifyHardwareAgent, cashDrawerRoutes);
+app.use("/api/payment", lockGate, verifyHardwareAgent, paymentRoutes);
+app.use("/api/keyboard", lockGate, verifyHardwareAgent, keyboardRoutes);
+app.use("/api/display", lockGate, verifyHardwareAgent, displayRoutes);
+
+/* ----------------------------------------------------
+   DEVICE INIT (scale: Datalogic / Remote Weight)
+---------------------------------------------------- */
+initScale({
+  path: config.scale_serial_path,
+  baudRate: config.scale_baud_rate
+}).catch(() => {});
 
 /* ----------------------------------------------------
    START SERVER

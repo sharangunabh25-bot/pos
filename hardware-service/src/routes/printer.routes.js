@@ -40,6 +40,41 @@ function logJob(entry) {
   fs.appendFileSync(AUDIT_LOG, line + "\n");
 }
 
+/**
+ * Coerces numeric strings to numbers for total and item qty/price.
+ * @param {Object} body - Raw request body
+ * @returns {Object} Normalized body with numbers where applicable
+ */
+function normalizePrintPayload(body) {
+  if (!body) return body;
+
+  const total =
+    typeof body.total === "string" && body.total.trim() !== ""
+      ? Number(body.total)
+      : body.total;
+
+  const items = Array.isArray(body.items)
+    ? body.items.map((item) => ({
+        ...item,
+        qty:
+          typeof item.qty === "string" && item.qty.trim() !== ""
+            ? Number(item.qty)
+            : item.qty,
+        price:
+          typeof item.price === "string" && item.price.trim() !== ""
+            ? Number(item.price)
+            : item.price
+      }))
+    : body.items;
+
+  return { ...body, total, items };
+}
+
+/**
+ * Validates print payload; expects normalized body (total, qty, price as numbers).
+ * @param {Object} body - Normalized request body
+ * @returns {string|null} Error message or null if valid
+ */
 function validatePrintPayload(body) {
   if (!body) return "Missing request body";
 
@@ -47,7 +82,7 @@ function validatePrintPayload(body) {
     return "items[] is required";
   }
 
-  if (typeof body.total !== "number") {
+  if (typeof body.total !== "number" || Number.isNaN(body.total)) {
     return "total must be a number";
   }
 
@@ -55,7 +90,9 @@ function validatePrintPayload(body) {
     if (
       typeof item.name !== "string" ||
       typeof item.qty !== "number" ||
-      typeof item.price !== "number"
+      Number.isNaN(item.qty) ||
+      typeof item.price !== "number" ||
+      Number.isNaN(item.price)
     ) {
       return "Each item must have name (string), qty (number), price (number)";
     }
@@ -105,8 +142,9 @@ router.post("/print", async (req, res) => {
   const jobId = crypto.randomUUID();
 
   try {
-    // 1) Validate payload
-    const error = validatePrintPayload(req.body);
+    // 1) Normalize (coerce string numbers) then validate
+    const payload = normalizePrintPayload(req.body);
+    const error = validatePrintPayload(payload);
     if (error) {
       return res.status(400).json({
         success: false,
@@ -120,7 +158,7 @@ router.post("/print", async (req, res) => {
       job_id: jobId,
       terminal_uid: config.terminal_uid,
       store_id: config.store_id,
-      receipt: req.body
+      receipt: payload
     };
 
     // 3) Log before printing (idempotency trace)
@@ -130,7 +168,7 @@ router.post("/print", async (req, res) => {
     });
 
     // 4) Execute print
-    await printReceipt(req.body);
+    await printReceipt(payload);
 
     // 5) Log success
     logJob({

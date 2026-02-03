@@ -18,7 +18,18 @@ let config = {
   approved: false,
 
   created_at: null,
-  last_boot_at: null
+  last_boot_at: null,
+
+  /** Scale (Datalogic Magellan 9300i / Remote Weight 8300RD) */
+  scale_serial_path: process.env.SCALE_SERIAL_PATH || "COM3",
+  scale_baud_rate: Number(process.env.SCALE_BAUD_RATE) || 9600,
+
+  /** Cash drawer (M-S CF-405BX-M-B) - serial port or empty to use printer kick */
+  cash_drawer_serial_path: process.env.CASH_DRAWER_SERIAL_PATH || "",
+
+  /** Barcode scanner (Zebra DS2278) - HID; no config required for keyboard-mode */
+  /** Payment terminal (PAX A35) - integrate via PAX SDK */
+  /** POS Keyboard (Cherry SPOS) / Touchscreen (Planar) - input/display */
 };
 
 /* ----------------------------------------------------
