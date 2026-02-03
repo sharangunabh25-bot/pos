@@ -87,7 +87,12 @@ router.post("/heartbeat", async (req, res) => {
 /* ====================================================
    CLOUD → HARDWARE (printer list)
 ==================================================== */
-router.get("/printer/list", async (req, res) => {
+/**
+ * Handles GET printer list: requires x-store-id, forwards to active hardware terminal.
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
+async function handlePrinterList(req, res) {
   console.log("����️ [CLOUD] Printer list request received");
 
   try {
@@ -185,7 +190,13 @@ router.get("/printer/list", async (req, res) => {
       error: err.message
     });
   }
-});
+}
+
+/* ====================================================
+   /api/cloud/printer/list and /api/cloudprinter/list
+==================================================== */
+router.get("/printer/list", handlePrinterList);
+router.get("/list", handlePrinterList);
 
 /* ----------------------------------------------------
    CLOUD → HARDWARE (printer print)
