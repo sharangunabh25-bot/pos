@@ -4,15 +4,20 @@ import cloudScannerRoutes from "./routes/cloudScanner.routes.js";
 import cloudScaleRoutes from "./routes/cloudScale.routes.js";
 import cloudCashDrawerRoutes from "./routes/cloudCashDrawer.routes.js";
 import cloudPaymentRoutes from "./routes/cloudPayment.routes.js";
+import terminalRoutes from "./routes/terminal.routes.js";
 
 const app = express();
 app.use(express.json());
 
+// Cloud-facing routes
 app.use("/api/cloud", cloudPrinterRoutes);
 app.use("/api/cloudprinter", cloudPrinterRoutes);
 app.use("/api/scanner", cloudScannerRoutes);
 app.use("/api/scale", cloudScaleRoutes);
 app.use("/api/cash-drawer", cloudCashDrawerRoutes);
 app.use("/api/payment", cloudPaymentRoutes);
+
+// Terminal management routes
+app.use("/api/terminal", terminalRoutes);
 
 export default app;
