@@ -3,6 +3,9 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
+import { config } from "../../config.js";
+import { renderReceiptText } from "../../utils/receiptRenderer.js";
+
 const PRINTER_NAME = "EPSON TM-T88V Receipt"; // must EXACTLY match wmic output
 
 export async function listPrinters() {
@@ -24,25 +27,14 @@ export async function listPrinters() {
 export async function printReceipt(data) {
   return new Promise((resolve, reject) => {
     try {
-      const lines = [];
-
-      lines.push("        POS RECEIPT");
-      lines.push("--------------------------------");
-
-      for (const item of data.items || []) {
-        const name = item.name.padEnd(16, " ");
-        const qty = String(item.qty).padStart(3, " ");
-        const price = String(item.price).padStart(8, " ");
-        lines.push(`${name}${qty}${price}`);
-      }
-
-      lines.push("--------------------------------");
-      lines.push(`TOTAL: ${data.total}`);
-      lines.push("");
-      lines.push("Thank you!");
-      lines.push("\n\n\n"); // feed paper
-
-      const receiptText = lines.join("\n");
+      // Backward compatible: use provided company_name else config else default
+      const receiptText = renderReceiptText({
+        ...data,
+        company_name:
+          data?.company_name ||
+          config.receipt_company_name ||
+          "Southwest Farmers"
+      });
 
       const tempFile = path.join(os.tmpdir(), `receipt_${Date.now()}.txt`);
       fs.writeFileSync(tempFile, receiptText, "utf8");

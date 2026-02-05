@@ -33,6 +33,10 @@ let config = {
   pax_bridge_url: process.env.PAX_BRIDGE_URL || "http://localhost:7001",
   pax_terminal_id: process.env.PAX_TERMINAL_ID || null,
   pax_timeout_ms: Number(process.env.PAX_TIMEOUT_MS) || 30000,
+
+  /** Receipt formatting */
+  receipt_company_name:
+    process.env.RECEIPT_COMPANY_NAME || "Southwest Farmers",
   /** POS Keyboard (Cherry SPOS) / Touchscreen (Planar) - input/display */
 };
 
