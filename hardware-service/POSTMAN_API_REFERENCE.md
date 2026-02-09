@@ -16,6 +16,61 @@ Set these **variables** in each environment:
 
 ---
 
+## 0. Integration config (PAX Android / Laravel / clients that can’t set headers)
+
+For PAX on Android or Laravel/web clients that have trouble sending custom headers (`x-store-id`, `x-terminal-id`, `x-agent-secret`), use one of the following.
+
+### 0.1 Fetch header values once
+
+Call this once (e.g. after store login), then use the returned values in subsequent requests (as headers or in body).
+
+| Field   | Value |
+|--------|--------|
+| Method | `GET` or `POST` |
+| URL    | `{{base_url}}/api/integration-config` |
+| Headers| `x-store-id`: `{{x_store_id}}` (or send `store_id` in body/query) |
+| Optional | If `INTEGRATION_SECRET` is set on server: `x-integration-secret` or `Authorization: Bearer <secret>` |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "store_id": "02b0c3e1-81c9-461e-8e92-1be0ef785b5e",
+  "terminal_id": "TERM-ABC123",
+  "agent_secret": "<secret>",
+  "headers": {
+    "x-store-id": "02b0c3e1-...",
+    "x-terminal-id": "TERM-ABC123",
+    "x-agent-secret": "<secret>"
+  }
+}
+```
+
+Use `headers` or the top-level fields when calling other cloud APIs (see **0.2**).
+
+### 0.2 Sending credentials in body or query (no custom headers)
+
+All cloud APIs accept integration credentials in **body** or **query** if headers are missing:
+
+- **Body (POST):** `store_id`, `terminal_id`, `agent_secret` (or `x_store_id`, `x_terminal_id`, `x_agent_secret`)
+- **Query (GET):** `store_id`, `terminal_id`, `agent_secret`
+
+Example (Laravel / PAX): POST to `/api/cloudprinter/print` with body:
+
+```json
+{
+  "store_id": "02b0c3e1-81c9-461e-8e92-1be0ef785b5e",
+  "title": "bill",
+  "items": [{"name": "Maggi", "qty": 2, "price": "120.00"}],
+  "total": "170"
+}
+```
+
+Cloud routes only require `store_id`; the server looks up the active terminal. For direct hardware agent calls, include `terminal_id` and `agent_secret` from the integration-config response.
+
+---
+
 ## 1. Cloud API (Render / cloud server)
 
 Base URL: `{{base_url}}` = `https://pos-agent-33ky.onrender.com`
