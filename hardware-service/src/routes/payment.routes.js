@@ -10,8 +10,34 @@ import {
   initiatePaxPayment,
   cancelPaxPayment
 } from "../devices/payment/pax.service.js";
+import {
+  getPaxElavonConfig,
+  getPaxElavonConnectionPayload
+} from "../config/paxElavon.config.js";
 
 const router = Router();
+
+/**
+ * GET /api/payment/elavon-config
+ * Returns Elavon/PAX processor config (TID, MID, hosts, ports) for SDK or bridge setup.
+ * No bridge or PAX_ENABLED required.
+ */
+router.get("/elavon-config", (_req, res) => {
+  try {
+    const full = getPaxElavonConfig();
+    const connection = getPaxElavonConnectionPayload();
+    res.json({
+      success: true,
+      connection,
+      full
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message || "Failed to get Elavon config"
+    });
+  }
+});
 
 /**
  * GET /api/payment/status
