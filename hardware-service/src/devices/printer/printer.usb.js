@@ -65,3 +65,4 @@ export async function printReceipt(data) {
     throw error;
   }
 }
+
