@@ -1,5 +1,6 @@
 import axios from "axios";
 import { config } from "../../config.js";
+import { getPaxElavonConnectionPayload } from "../../config/paxElavon.config.js";
 
 /**
  * PAX A35 integration helper.
@@ -7,6 +8,9 @@ import { config } from "../../config.js";
  * This service talks to a local/remote bridge that actually uses
  * the vendor SDK (typically .NET / Java). Point `pax_bridge_url`
  * in `config.json` or `PAX_BRIDGE_URL` env var at that bridge.
+ *
+ * Elavon/processor config (TID, MID, SSL/TCP hosts) is provided by
+ * config/paxElavon.config.js (Southwest Farmers Market / PAX Technology Inc.).
  */
 
 function ensureConfigured() {
@@ -43,9 +47,11 @@ export async function getPaxStatus() {
 
   try {
     const client = getClient();
+    const elavonPayload = getPaxElavonConnectionPayload();
     const response = await client.get("/payment/status", {
       params: {
-        terminalId: config.pax_terminal_id || undefined
+        terminalId: config.pax_terminal_id || undefined,
+        ...elavonPayload
       }
     });
 
@@ -56,6 +62,7 @@ export async function getPaxStatus() {
       bridge: {
         url: config.pax_bridge_url
       },
+      elavon: elavonPayload,
       pax: response.data
     };
   } catch (err) {
@@ -74,11 +81,13 @@ export async function initiatePaxPayment({ amount, currency, order_id }) {
 
   const client = getClient();
 
+  const elavonPayload = getPaxElavonConnectionPayload();
   const payload = {
     amount,
     currency,
     orderId: order_id,
-    terminalId: config.pax_terminal_id || undefined
+    terminalId: config.pax_terminal_id || undefined,
+    elavon: elavonPayload
   };
 
   const response = await client.post("/payment/initiate", payload);
@@ -89,8 +98,10 @@ export async function cancelPaxPayment() {
   ensureConfigured();
 
   const client = getClient();
+  const elavonPayload = getPaxElavonConnectionPayload();
   const response = await client.post("/payment/cancel", {
-    terminalId: config.pax_terminal_id || undefined
+    terminalId: config.pax_terminal_id || undefined,
+    elavon: elavonPayload
   });
 
   return response.data;
