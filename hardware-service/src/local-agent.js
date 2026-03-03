@@ -6,7 +6,7 @@ export async function registerWithCloud(publicUrl) {
     await axios.post(
       `${config.cloud_url}/api/terminals/register`,
       {
-        terminal_id: config.terminal_id,
+        terminal_id: config.terminal_uid,
         agent_secret: config.agent_secret,
         hardware_url: publicUrl
       },

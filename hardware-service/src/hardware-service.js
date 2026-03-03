@@ -57,14 +57,28 @@ app.use("/api/display", lockGate, verifyHardwareAgent, displayRoutes);
 initScale({
   path: config.scale_serial_path,
   baudRate: config.scale_baud_rate
-}).catch(() => {});
+}).catch(() => { });
 
 /* ----------------------------------------------------
    START SERVER
 ---------------------------------------------------- */
-app.listen(3001, () => {
-  console.log("����️ Hardware agent running on port 3001");
-  console.log("���� NGROK:", process.env.NGROK_URL);
+const server = app.listen(3001, () => {
+  console.log("🖥️ Hardware agent running on port 3001");
+  console.log("🌐 NGROK:", process.env.NGROK_URL);
+});
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(
+      "❌ Port 3001 is already in use.\n" +
+      "   Another instance of this service may be running.\n" +
+      "   Run: Get-NetTCPConnection -LocalPort 3001 | Select OwningProcess\n" +
+      "   Then: Stop-Process -Id <PID> -Force"
+    );
+  } else {
+    console.error("❌ Server error:", err.message);
+  }
+  process.exit(1);
 });
 
 /* ----------------------------------------------------

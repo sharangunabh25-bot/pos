@@ -11,7 +11,7 @@ export async function registerTerminal() {
     // ==============================
     // HARD GUARDS
     // ==============================
-    if (!config.terminal_id || !config.agent_secret) {
+    if (!config.terminal_uid || !config.agent_secret) {
       throw new Error("Missing terminal identity or agent secret");
     }
 
@@ -21,12 +21,12 @@ export async function registerTerminal() {
 
     // Already registered & approved → nothing to do
     if (config.registered && config.approved && config.store_id) {
-      console.log("✅ Terminal already registered & approved:", config.terminal_id);
+      console.log("✅ Terminal already registered & approved:", config.terminal_uid);
       return true;
     }
 
     console.log("���� Registering terminal with cloud...");
-    console.log("→ terminal_id:", config.terminal_id);
+    console.log("→ terminal_uid:", config.terminal_uid);
     console.log("→ hostname:", os.hostname());
     console.log("→ platform:", `${os.platform()} ${os.release()}`);
 
@@ -36,7 +36,7 @@ export async function registerTerminal() {
     const res = await axios.post(
       `${config.cloud_url}/api/terminals/register`,
       {
-        terminal_id: config.terminal_id,
+        terminal_id: config.terminal_uid,
         agent_secret: config.agent_secret,
         hostname: os.hostname(),
         platform: `${os.platform()} ${os.release()}`,
