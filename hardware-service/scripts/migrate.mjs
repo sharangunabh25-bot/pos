@@ -1,4 +1,4 @@
-// scripts/migrate.mjs
+;// scripts/migrate.mjs
 // Run: node scripts/migrate.mjs
 import pkg from "pg";
 const { Pool } = pkg;
