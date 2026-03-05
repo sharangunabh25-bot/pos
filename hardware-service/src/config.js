@@ -32,6 +32,8 @@ let config = {
   pax_enabled: process.env.PAX_ENABLED === "true",
   pax_bridge_url: process.env.PAX_BRIDGE_URL || "http://localhost:7001",
   pax_terminal_id: process.env.PAX_TERMINAL_ID || null,
+  pax_terminal_ip: process.env.PAX_TERMINAL_IP || "192.168.1.100",
+  pax_terminal_port: Number(process.env.PAX_TERMINAL_PORT) || 10009,
   pax_timeout_ms: Number(process.env.PAX_TIMEOUT_MS) || 30000,
 
   /** Receipt formatting */

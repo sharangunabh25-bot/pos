@@ -56,7 +56,6 @@ app.post("/payment/initiate", (req, res) => {
             currentTransaction
         });
     }
-    z
     txCounter++;
     currentTransaction = {
         transactionId: `MOCK-TX-${txCounter}`,
@@ -134,11 +133,57 @@ app.get("/payment/result/:transactionId", (req, res) => {
     });
 });
 
+/* ------------------------------------------
+   POST /payment/void
+------------------------------------------ */
+app.post("/payment/void", (req, res) => {
+    const { ref_num } = req.body || {};
+    console.log("↩️  [BRIDGE] POST /payment/void", { ref_num });
+
+    if (!ref_num) {
+        return res.status(400).json({ success: false, message: "ref_num is required" });
+    }
+
+    const voided = { ...currentTransaction };
+    currentTransaction = null;
+
+    res.json({
+        success: true,
+        status: "voided",
+        refNum: ref_num,
+        transactionId: voided.transactionId || null,
+        voidedAt: new Date().toISOString()
+    });
+});
+
+/* ------------------------------------------
+   POST /payment/refund
+------------------------------------------ */
+app.post("/payment/refund", (req, res) => {
+    const { amount, ref_num } = req.body || {};
+    console.log("💸 [BRIDGE] POST /payment/refund", { amount, ref_num });
+
+    if (!amount || amount <= 0) {
+        return res.status(400).json({ success: false, message: "amount > 0 required" });
+    }
+
+    res.json({
+        success: true,
+        status: "refunded",
+        amount,
+        refNum: ref_num || null,
+        authCode: `REF${Math.floor(Math.random() * 900000) + 100000}`,
+        refundedAt: new Date().toISOString()
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`\n🟢 PAX Mock Bridge running on http://localhost:${PORT}`);
     console.log("   Endpoints:");
     console.log(`   GET  /payment/status`);
     console.log(`   POST /payment/initiate   { amount: 12.99, currency: "USD", orderId: "ORD-001" }`);
     console.log(`   POST /payment/cancel`);
+    console.log(`   POST /payment/void       { ref_num: "..." }`);
+    console.log(`   POST /payment/refund     { amount: 5.00, ref_num: "..." }`);
     console.log(`   GET  /payment/result/:transactionId\n`);
 });

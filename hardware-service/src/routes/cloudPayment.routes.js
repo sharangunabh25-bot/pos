@@ -46,5 +46,7 @@ async function forwardToHardware(req, res, method, pathSuffix, body = null) {
 router.get("/status", (req, res) => forwardToHardware(req, res, "GET", "/status"));
 router.post("/initiate", (req, res) => forwardToHardware(req, res, "POST", "/initiate", req.body || {}));
 router.post("/cancel", (req, res) => forwardToHardware(req, res, "POST", "/cancel", req.body || {}));
+router.post("/void", (req, res) => forwardToHardware(req, res, "POST", "/void", req.body || {}));
+router.post("/refund", (req, res) => forwardToHardware(req, res, "POST", "/refund", req.body || {}));
 
 export default router;

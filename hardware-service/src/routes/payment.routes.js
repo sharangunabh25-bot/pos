@@ -8,7 +8,9 @@ import { Router } from "express";
 import {
   getPaxStatus,
   initiatePaxPayment,
-  cancelPaxPayment
+  cancelPaxPayment,
+  voidPaxPayment,
+  refundPaxPayment
 } from "../devices/payment/pax.service.js";
 import {
   getPaxElavonConfig,
@@ -102,6 +104,62 @@ router.post("/cancel", async (_req, res) => {
       success: false,
       message: err.response?.data?.message || err.message || "PAX cancel failed",
       error: err.response?.data || undefined
+    });
+  }
+});
+
+/**
+ * POST /api/payment/void
+ * Void a transaction by ref_num
+ */
+router.post("/void", async (req, res) => {
+  const { ref_num, amount } = req.body || {};
+
+  if (!ref_num) {
+    return res.status(400).json({
+      success: false,
+      message: "ref_num is required"
+    });
+  }
+
+  try {
+    const result = await voidPaxPayment({ ref_num, amount });
+    res.json({ success: true, ...result });
+  } catch (err) {
+    const status = err.code === "PAX_NOT_ENABLED" ? 503 : 502;
+    res.status(status).json({
+      success: false,
+      message: err.message,
+      code: err.code || "PAX_ERROR",
+      responseCode: err.responseCode
+    });
+  }
+});
+
+/**
+ * POST /api/payment/refund
+ * Refund (return) a transaction
+ */
+router.post("/refund", async (req, res) => {
+  const { amount, ref_num } = req.body || {};
+
+  if (typeof amount !== "number" || amount <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "amount (number > 0) is required"
+    });
+  }
+
+  try {
+    const result = await refundPaxPayment({ amount, ref_num });
+    res.json({ success: true, ...result });
+  } catch (err) {
+    const status = err.code === "PAX_NOT_ENABLED" ? 503 : 502;
+    res.status(status).json({
+      success: false,
+      message: err.message,
+      code: err.code || "PAX_ERROR",
+      responseCode: err.responseCode
     });
   }
 });
