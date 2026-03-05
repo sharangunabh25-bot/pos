@@ -2,6 +2,10 @@
  * Cloud proxy for payment (PAX A35): forwards to active hardware terminal.
  * Requires x-store-id. Use from frontend: GET https://your-cloud.com/api/payment/status
  */
+
+
+
+
 import express from "express";
 import fetch from "node-fetch";
 import { getActiveTerminalForStore } from "../utils/hardwareRegistry.js";
