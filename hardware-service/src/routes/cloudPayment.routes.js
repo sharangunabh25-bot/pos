@@ -5,9 +5,31 @@
 import express from "express";
 import fetch from "node-fetch";
 import { getActiveTerminalForStore } from "../utils/hardwareRegistry.js";
+import {
+  getPaxElavonConfig,
+  getPaxElavonConnectionPayload
+} from "../config/paxElavon.config.js";
 import logger from "../utils/logger.js";
 
 const router = express.Router();
+
+/**
+ * GET /api/payment/elavon-config
+ * Returns Elavon/PAX processor config (TID, MID, hosts, ports).
+ * Static config — no store_id or active terminal required.
+ */
+router.get("/elavon-config", (_req, res) => {
+  try {
+    const full = getPaxElavonConfig();
+    const connection = getPaxElavonConnectionPayload();
+    res.json({ success: true, connection, full });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message || "Failed to get Elavon config"
+    });
+  }
+});
 
 async function forwardToHardware(req, res, method, pathSuffix, body = null) {
   const store_id = req.headers["x-store-id"];
