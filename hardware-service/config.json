@@ -14,7 +14,7 @@
   "pax_enabled": true,
   "pax_bridge_url": "http://localhost:7001",
   "pax_terminal_id": null,
-  "pax_terminal_ip": "192.168.1.100",
+  "pax_terminal_ip": "192.168.1.44",
   "pax_terminal_port": 10009,
   "pax_timeout_ms": 30000,
   "receipt_company_name": "Southwest Farmers",
