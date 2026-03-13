@@ -5,7 +5,13 @@ import { config, CONFIG_PATH } from "./config.js";
 export async function heartbeat() {
   try {
     if (!process.env.NGROK_URL) {
-      throw new Error("NGROK_URL not set");
+      console.warn("⚠️ [HEARTBEAT] Skipping — NGROK_URL not set");
+      return;
+    }
+
+    if (!config.store_id) {
+      console.warn("⚠️ [HEARTBEAT] Skipping — terminal not yet approved (no store_id)");
+      return;
     }
 
     console.log("���� [HEARTBEAT] Sending heartbeat");
