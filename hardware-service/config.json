@@ -7,7 +7,7 @@
   "registered": true,
   "approved": true,
   "created_at": "2026-01-23T07:41:46.614Z",
-  "last_boot_at": "2026-03-05T07:24:01.887Z",
+  "last_boot_at": "2026-03-11T06:56:29.577Z",
   "scale_serial_path": "COM3",
   "scale_baud_rate": 9600,
   "cash_drawer_serial_path": "COM5",
