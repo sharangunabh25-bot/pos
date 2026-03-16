@@ -112,12 +112,12 @@ export function renderReceiptText(data) {
     typeof data?.subtotal === "number"
       ? data.subtotal
       : items.reduce((sum, it) => {
-          const qty = typeof it?.qty === "number" ? it.qty : Number(it?.qty);
-          const price =
-            typeof it?.price === "number" ? it.price : Number(it?.price);
-          if (Number.isNaN(qty) || Number.isNaN(price)) return sum;
-          return sum + qty * price;
-        }, 0);
+        const qty = typeof it?.qty === "number" ? it.qty : Number(it?.qty);
+        const price =
+          typeof it?.price === "number" ? it.price : Number(it?.price);
+        if (Number.isNaN(qty) || Number.isNaN(price)) return sum;
+        return sum + qty * price;
+      }, 0);
 
   const tax =
     typeof data?.tax === "number" ? data.tax : typeof data?.tax === "string" ? Number(data.tax) : null;
@@ -181,7 +181,7 @@ export function renderReceiptText(data) {
     if (p.card_number_masked) {
       lines.push(
         padRight("CARD NUMBER", labelCol) +
-          padLeft(String(p.card_number_masked), priceCol)
+        padLeft(String(p.card_number_masked), priceCol)
       );
     }
     if (p.card_type) {
