@@ -56,7 +56,6 @@ export async function heartbeat() {
     }
 
   } catch (err) {
-    z
     console.error("❌ [HEARTBEAT] Failed:", err.message);
   }
 }
