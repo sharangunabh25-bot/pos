@@ -30,10 +30,18 @@ export async function registerHeartbeat({
 }
 
 export async function cleanupStaleTerminals() {
-  await query(`
-    DELETE FROM active_terminals
-    WHERE last_seen_at < NOW() - INTERVAL '5 minutes'
-  `);
+  try {
+    await query(`
+      DELETE FROM active_terminals
+      WHERE last_seen_at < NOW() - INTERVAL '5 minutes'
+    `);
+  } catch (err) {
+    // Cleanup is best-effort; do not crash the service on transient DB drops.
+    console.error("Cleanup stale terminals failed:", err.message);
+    return false;
+  }
+
+  return true;
 }
 
 /**

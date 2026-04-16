@@ -4,6 +4,15 @@ import { cleanupStaleTerminals } from "./utils/hardwareRegistry.js";
 
 const PORT = process.env.PORT || 10000;
 
+process.on("unhandledRejection", (reason) => {
+  const message = reason instanceof Error ? reason.message : String(reason);
+  console.error("Unhandled promise rejection:", message);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err.message);
+});
+
 async function start() {
   await initDB();
 
