@@ -37,7 +37,7 @@ export async function query(text, params = []) {
 
 // ✅ Init DB (fixes your Render crash)
 export async function initDB() {
-  console.log("���� Initializing database...");
+  console.log("Initializing database...");
 
   await query(`
     CREATE TABLE IF NOT EXISTS active_terminals (
@@ -55,5 +55,5 @@ export async function initDB() {
     ON active_terminals(last_seen_at);
   `);
 
-  console.log("✅ Database initialized");
+  console.log("Database initialized");
 }

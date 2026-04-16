@@ -12,7 +12,7 @@ let config = {
   agent_secret: null,
 
   store_id: null,
-  cloud_url: "https://pos-agent-33ky.onrender.com",
+  cloud_url: process.env.CLOUD_URL || "https://pos-7mvx.onrender.com",
 
   registered: false,
   approved: false,
@@ -96,9 +96,8 @@ try {
 }
 
 /* ----------------------------------------------------
-   ⚠️ TEMP DEBUG — REMOVE AFTER COPYING SECRET
+   Startup log
 ---------------------------------------------------- */
-console.log("���� HARDWARE AGENT SECRET:", config.agent_secret);
-console.log("����️ HARDWARE TERMINAL UID:", config.terminal_uid);
+console.log("Hardware terminal UID:", config.terminal_uid);
 
 export { config };

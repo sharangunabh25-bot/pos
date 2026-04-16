@@ -14,7 +14,7 @@ export async function heartbeat() {
       return;
     }
 
-    console.log("���� [HEARTBEAT] Sending heartbeat");
+    console.log("[HEARTBEAT] Sending heartbeat");
     console.log("[HEARTBEAT] NGROK:", process.env.NGROK_URL);
 
     const res = await fetch(
@@ -33,7 +33,23 @@ export async function heartbeat() {
       }
     );
 
-    const data = await res.json();
+    const rawBody = await res.text();
+    let data = null;
+
+    try {
+      data = rawBody ? JSON.parse(rawBody) : null;
+    } catch {
+      data = { success: false, error: rawBody || "Invalid JSON response" };
+    }
+
+    if (!res.ok) {
+      console.error("[HEARTBEAT] Cloud request failed:", {
+        status: res.status,
+        body: data
+      });
+      return;
+    }
+
     console.log("[HEARTBEAT] Cloud response:", data);
 
     /* ----------------------------------------------------
@@ -41,7 +57,7 @@ export async function heartbeat() {
     ---------------------------------------------------- */
     if (data.approved && data.store_id) {
       if (!config.approved) {
-        console.log("���� [HEARTBEAT] Applying approval locally");
+        console.log("[HEARTBEAT] Applying approval locally");
 
         config.approved = true;
         config.store_id = data.store_id;
