@@ -2,7 +2,25 @@ import fetch from "node-fetch";
 import fs from "fs";
 import { config, CONFIG_PATH } from "./config.js";
 
+const HEARTBEAT_TIMEOUT_MS = 8000;
+const MAX_ERROR_BODY_CHARS = 500;
+let heartbeatInFlight = false;
+
+function truncate(value, maxLength = MAX_ERROR_BODY_CHARS) {
+  if (typeof value !== "string") return value;
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength)}... [truncated ${value.length - maxLength} chars]`;
+}
+
 export async function heartbeat() {
+  if (heartbeatInFlight) {
+    console.warn("[HEARTBEAT] Previous heartbeat still running; skipping this cycle");
+    return;
+  }
+
+  heartbeatInFlight = true;
+  let timeoutId;
+
   try {
     if (!process.env.NGROK_URL) {
       console.warn("⚠️ [HEARTBEAT] Skipping — NGROK_URL not set");
@@ -17,6 +35,9 @@ export async function heartbeat() {
     console.log("[HEARTBEAT] Sending heartbeat");
     console.log("[HEARTBEAT] NGROK:", process.env.NGROK_URL);
 
+    const controller = new AbortController();
+    timeoutId = setTimeout(() => controller.abort(), HEARTBEAT_TIMEOUT_MS);
+
     const res = await fetch(
       `${config.cloud_url}/api/cloud/heartbeat`,
       {
@@ -29,9 +50,11 @@ export async function heartbeat() {
         body: JSON.stringify({
           store_id: config.store_id,
           hardware_url: process.env.NGROK_URL
-        })
+        }),
+        signal: controller.signal
       }
     );
+    clearTimeout(timeoutId);
 
     const rawBody = await res.text();
     let data = null;
@@ -45,7 +68,10 @@ export async function heartbeat() {
     if (!res.ok) {
       console.error("[HEARTBEAT] Cloud request failed:", {
         status: res.status,
-        body: data
+        body: {
+          ...data,
+          error: truncate(data?.error)
+        }
       });
       return;
     }
@@ -72,6 +98,12 @@ export async function heartbeat() {
     }
 
   } catch (err) {
-    console.error("❌ [HEARTBEAT] Failed:", err.message);
+    const reason = err.name === "AbortError"
+      ? `Request timed out after ${HEARTBEAT_TIMEOUT_MS}ms`
+      : err.message;
+    console.error("❌ [HEARTBEAT] Failed:", reason);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+    heartbeatInFlight = false;
   }
 }
