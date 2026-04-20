@@ -21,7 +21,7 @@ const router = Router();
 
 /**
  * GET /api/payment/elavon-config
- * Returns Elavon/PAX processor config (TID, MID, hosts, ports) for SDK or bridge setup.
+ * Returns Elavon/PAX processor config (TID, MID, hosts, ports) for SDK or bridge setup. 
  * No bridge or PAX_ENABLED required.
  */
 router.get("/elavon-config", (_req, res) => {
