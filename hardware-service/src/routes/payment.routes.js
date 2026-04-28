@@ -7,8 +7,7 @@
 import { Router } from "express";
 import {
   getPaxStatus,
-  initiatePaxPayment,
-  cancelPaxPayment,
+  initiatePaxPayment,      
   voidPaxPayment,
   refundPaxPayment
 } from "../devices/payment/pax.service.js";

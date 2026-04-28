@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "terminal_uid": "TERM-REPLACE_ME",
+  "agent_secret": "REPLACE_WITH_NEW_SECRET",
+  "store_id": null,
+  "cloud_url": "https://pos-7mvx.onrender.com",
+  "registered": false,
+  "approved": false,
+  "scale_serial_path": "COM3",
+  "scale_baud_rate": 9600,
+  "cash_drawer_serial_path": "COM5",
+  "cash_drawer_baud_rate": 9600,
+  "pax_enabled": true,
+  "pax_bridge_url": "http://localhost:7001",
+  "pax_terminal_id": null,
+  "pax_terminal_ip": "192.168.1.44",
+  "pax_terminal_port": 10009,
+  "pax_timeout_ms": 30000,
+  "receipt_company_name": "Southwest Farmers"
+}
