@@ -54,6 +54,7 @@ const CMD = {
   INIT: "A00",
   ABORT: "A14",
   SALE: "T00",
+  SALE_ALT: "T01",
   VOID: "T02",
   RETURN: "T04"
 };
@@ -263,7 +264,8 @@ export async function initiatePaxPayment({ amount, currency = "USD", order_id })
   const amountCents = Math.round(amount * 100).toString();
   const elavon = getPaxElavonConnectionPayload();
 
-  const fields = [
+  // Legacy/older packet shape.
+  const primaryFields = [
     "01",          // EDC type: Credit
     "01",          // transaction type: Sale
     amountCents,   // amount (cents)
@@ -279,19 +281,54 @@ export async function initiatePaxPayment({ amount, currency = "USD", order_id })
     currency       // currency
   ];
 
-  const packet = buildPacket(CMD.SALE, fields);
-  const raw = await sendCommand(packet);
-  const result = mapResponse(raw);
+  const primaryPacket = buildPacket(CMD.SALE, primaryFields);
+  const primaryRaw = await sendCommand(primaryPacket);
+  const primaryResult = mapResponse(primaryRaw);
 
-  if (!result.approved) {
-    const err = new Error(result.responseMessage || "PAX transaction declined");
+  if (primaryResult.approved) {
+    return primaryResult;
+  }
+
+  // Some PAX firmware expects T01 with explicit transType-first field order.
+  if (
+    primaryResult.responseCode === "100003" ||
+    /TRANS TYPE NULL/i.test(primaryResult.responseMessage || "")
+  ) {
+    const altFields = [
+      "01",          // trans type: Sale
+      amountCents,   // amount (cents)
+      "0",           // amount2 (tip/cashback)
+      order_id || "", // ref/order
+      "",            // invoice
+      elavon.tid,    // TID
+      elavon.mid,    // MID
+      currency       // currency
+    ];
+
+    const altPacket = buildPacket(CMD.SALE_ALT, altFields);
+    const altRaw = await sendCommand(altPacket);
+    const altResult = mapResponse(altRaw);
+    if (altResult.approved) {
+      return altResult;
+    }
+
+    const err = new Error(altResult.responseMessage || "PAX transaction declined");
     err.code = "PAX_DECLINED";
-    err.responseCode = result.responseCode;
-    err.paxResult = result;
+    err.responseCode = altResult.responseCode;
+    err.paxResult = altResult;
+    err.initialPaxResult = primaryResult;
     throw err;
   }
 
-  return result;
+  if (!primaryResult.approved) {
+    const err = new Error(primaryResult.responseMessage || "PAX transaction declined");
+    err.code = "PAX_DECLINED";
+    err.responseCode = primaryResult.responseCode;
+    err.paxResult = primaryResult;
+    throw err;
+  }
+
+  return primaryResult;
 }
 
 /**
