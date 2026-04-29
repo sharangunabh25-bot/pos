@@ -9,6 +9,19 @@ import logger from "../utils/logger.js";
 
 const router = express.Router();
 
+async function parseHardwareResponse(hRes) {
+  const raw = await hRes.text();
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {
+      success: false,
+      message: "Invalid response from hardware",
+      raw
+    };
+  }
+}
+
 async function forwardToHardware(req, res, method, pathSuffix, body = null) {
   const store_id = req.headers["x-store-id"];
   logger.info("[CLOUD CASH-DRAWER] Request", { method, path: pathSuffix, store_id, has_header: !!store_id });
@@ -28,6 +41,7 @@ async function forwardToHardware(req, res, method, pathSuffix, body = null) {
       method,
       headers: {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
         "x-terminal-id": terminal_uid,
         "x-agent-secret": agent_secret
       },
@@ -35,7 +49,7 @@ async function forwardToHardware(req, res, method, pathSuffix, body = null) {
     };
     if (body !== null) opts.body = JSON.stringify(body);
     const hRes = await fetch(targetUrl, opts);
-    const data = await hRes.json();
+    const data = await parseHardwareResponse(hRes);
     return res.status(hRes.status).json(data);
   } catch (err) {
     logger.error("[CLOUD CASH-DRAWER] Forward failed", { message: err.message });

@@ -9,6 +9,19 @@ import logger from "../utils/logger.js";
 
 const router = express.Router();
 
+async function parseHardwareResponse(hRes) {
+  const raw = await hRes.text();
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {
+      success: false,
+      message: "Invalid response from hardware",
+      raw
+    };
+  }
+}
+
 async function forwardGet(req, res, pathSuffix) {
   const store_id = req.headers["x-store-id"];
   logger.info("[CLOUD SCALE] Request", { path: pathSuffix, store_id, has_header: !!store_id });
@@ -28,12 +41,13 @@ async function forwardGet(req, res, pathSuffix) {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
         "x-terminal-id": terminal_uid,
         "x-agent-secret": agent_secret
       },
       timeout: 8000
     });
-    const data = await hRes.json();
+    const data = await parseHardwareResponse(hRes);
     return res.status(hRes.status).json(data);
   } catch (err) {
     logger.error("[CLOUD SCALE] Forward failed", { message: err.message });

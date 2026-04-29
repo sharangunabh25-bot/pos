@@ -8,6 +8,19 @@ import logger from "../utils/logger.js";
 
 const router = express.Router();
 
+async function parseHardwareResponse(hRes) {
+  const raw = await hRes.text();
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {
+      success: false,
+      message: "Invalid response from hardware",
+      raw
+    };
+  }
+}
+
 /* ====================================================
    HEARTBEAT (hardware → cloud)
 ==================================================== */
@@ -140,6 +153,7 @@ async function handlePrinterList(req, res) {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
           "x-terminal-id": terminal_uid,
           "x-agent-secret": agent_secret
         },
@@ -161,19 +175,7 @@ async function handlePrinterList(req, res) {
     console.log("���� [CLOUD] Hardware response status", hardwareRes.status);
 
     // -------- Step 5: Parse response --------
-    let data;
-    try {
-      data = await hardwareRes.json();
-    } catch (parseErr) {
-      console.error("����❌ [CLOUD] Invalid JSON from hardware", {
-        error: parseErr.message
-      });
-
-      return res.status(502).json({
-        success: false,
-        message: "Invalid response from hardware"
-      });
-    }
+    const data = await parseHardwareResponse(hardwareRes);
 
     console.log("✅ [CLOUD] Printer list fetched successfully");
 
@@ -234,6 +236,7 @@ router.post("/printer/print", async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
         "x-terminal-id": terminal_uid,
         "x-agent-secret": agent_secret
       },
@@ -241,7 +244,7 @@ router.post("/printer/print", async (req, res) => {
       timeout: 15_000
     });
 
-    const data = await hardwareRes.json();
+    const data = await parseHardwareResponse(hardwareRes);
 
     logger.info("[CLOUD PRINTER] Hardware print response", { status: hardwareRes.status, success: data?.success });
     return res.status(hardwareRes.status).json(data);

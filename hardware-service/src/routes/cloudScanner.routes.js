@@ -9,6 +9,19 @@ import logger from "../utils/logger.js";
 
 const router = express.Router();
 
+async function parseHardwareResponse(hRes) {
+  const raw = await hRes.text();
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {
+      success: false,
+      message: "Invalid response from hardware",
+      raw
+    };
+  }
+}
+
 /**
  * Forward GET request to hardware scanner
  */
@@ -31,12 +44,13 @@ async function forwardGet(req, res, pathSuffix) {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
         "x-terminal-id": terminal_uid,
         "x-agent-secret": agent_secret
       },
       timeout: 8000
     });
-    const data = await hRes.json();
+    const data = await parseHardwareResponse(hRes);
     return res.status(hRes.status).json(data);
   } catch (err) {
     logger.error("[CLOUD SCANNER] Forward failed", { message: err.message });
@@ -64,13 +78,14 @@ async function forwardSimulate(req, res) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
         "x-terminal-id": terminal_uid,
         "x-agent-secret": agent_secret
       },
       body: JSON.stringify(req.body || {}),
       timeout: 8000
     });
-    const data = await hRes.json();
+    const data = await parseHardwareResponse(hRes);
     return res.status(hRes.status).json(data);
   } catch (err) {
     logger.error("[CLOUD SCANNER] Simulate forward failed", { message: err.message });
