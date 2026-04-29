@@ -81,6 +81,9 @@ router.post("/initiate", async (req, res) => {
     res.status(status).json({
       success: false,
       message: err.response?.data?.message || err.message || "PAX initiate failed",
+      code: err.code || err.response?.data?.code || undefined,
+      responseCode: err.responseCode || err.paxResult?.responseCode || undefined,
+      paxResult: err.paxResult || undefined,
       error: err.response?.data || undefined
     });
   }
