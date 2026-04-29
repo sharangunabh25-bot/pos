@@ -7,6 +7,7 @@ import paymentRoutes from "./routes/payment.routes.js";
 import keyboardRoutes from "./routes/keyboard.routes.js";
 import displayRoutes from "./routes/display.routes.js";
 import "./devices/scanner/scanner.hid.js";
+import { initScanner } from "./devices/scanner/scanner.service.js";
 import { verifyHardwareAgent } from "./middleware/verifyHardwareAgent.js";
 import { heartbeat } from "./heartbeat.js";
 import { config } from "./config.js";
@@ -58,6 +59,11 @@ app.use("/api/display", lockGate, verifyHardwareAgent, displayRoutes);
 initScale({
   path: config.scale_serial_path,
   baudRate: config.scale_baud_rate
+}).catch(() => { });
+
+initScanner({
+  path: config.scanner_serial_path,
+  baudRate: config.scanner_baud_rate
 }).catch(() => { });
 
 /* ----------------------------------------------------
