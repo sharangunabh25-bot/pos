@@ -129,18 +129,39 @@ async function sendCommand(base64Packet) {
  * @returns {string[]} fields array
  */
 function parseResponse(raw) {
-  let decoded;
+  const input = String(raw || "").trim();
+
+  let candidate = input;
   try {
-    decoded = Buffer.from(raw.trim(), "base64").toString("utf8");
+    // Some firmware returns URL-encoded payloads.
+    candidate = decodeURIComponent(input);
   } catch {
-    // Not base64 — try treating as plain text (some firmware versions)
-    decoded = raw.trim();
+    candidate = input;
+  }
+
+  const looksBase64 =
+    candidate.length > 0 &&
+    candidate.length % 4 === 0 &&
+    /^[A-Za-z0-9+/=]+$/.test(candidate);
+
+  let decoded = candidate;
+  if (looksBase64) {
+    try {
+      decoded = Buffer.from(candidate, "base64").toString("utf8");
+    } catch {
+      decoded = candidate;
+    }
   }
 
   // Strip STX (first char) and ETX+LRC (last 2 chars) if present
   if (decoded.charCodeAt(0) === 0x02) decoded = decoded.slice(1);
   if (decoded.charCodeAt(decoded.length - 2) === 0x03) decoded = decoded.slice(0, -2);
   else if (decoded.charCodeAt(decoded.length - 1) === 0x03) decoded = decoded.slice(0, -1);
+
+  // If field separator isn't present, return raw in status for diagnostics.
+  if (!decoded.includes(FS)) {
+    return [decoded];
+  }
 
   return decoded.split(FS);
 }
