@@ -6,6 +6,7 @@ import cashDrawerRoutes from "./routes/cashDrawer.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import keyboardRoutes from "./routes/keyboard.routes.js";
 import displayRoutes from "./routes/display.routes.js";
+import "./devices/scanner/scanner.hid.js";
 import { verifyHardwareAgent } from "./middleware/verifyHardwareAgent.js";
 import { heartbeat } from "./heartbeat.js";
 import { config } from "./config.js";
