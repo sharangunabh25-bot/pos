@@ -211,6 +211,54 @@ function ensurePaxEnabled() {
   }
 }
 
+function getBridgeBaseUrl() {
+  return String(config.pax_bridge_url || "").replace(/\/+$/, "");
+}
+
+async function callBridge(path, { method = "GET", body } = {}) {
+  const base = getBridgeBaseUrl();
+  if (!base) {
+    const err = new Error("pax_bridge_url is not configured in config.json");
+    err.code = "PAX_BRIDGE_NOT_CONFIGURED";
+    throw err;
+  }
+
+  let res;
+  try {
+    res = await fetch(`${base}${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      timeout: config.pax_timeout_ms || 30000
+    });
+  } catch (err) {
+    const e = new Error(`PAX bridge unreachable at ${base}: ${err.message}`);
+    e.code = "PAX_BRIDGE_UNREACHABLE";
+    throw e;
+  }
+
+  const text = await res.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { success: false, message: text || "Invalid JSON response from bridge" };
+  }
+
+  if (!res.ok || data?.success === false) {
+    const e = new Error(data?.message || `PAX bridge request failed (${res.status})`);
+    e.code = data?.code || "PAX_BRIDGE_ERROR";
+    e.responseCode = data?.responseCode;
+    e.paxResult = data?.paxResult;
+    e.response = { status: res.status, data };
+    throw e;
+  }
+
+  return data;
+}
+
 /**
  * GET /api/payment/status — ping terminal with A00 Initialize.
  */
@@ -222,6 +270,23 @@ export async function getPaxStatus() {
       enabled: false,
       message: "PAX A35 not enabled (set pax_enabled: true in config.json)",
       terminal_ip: config.pax_terminal_ip || null
+    };
+  }
+
+  try {
+    const elavon = getPaxElavonConnectionPayload();
+    return await callBridge(
+      `/payment/status?tid=${encodeURIComponent(elavon.tid)}&mid=${encodeURIComponent(elavon.mid)}`
+    );
+  } catch (err) {
+    return {
+      success: false,
+      configured: true,
+      enabled: true,
+      online: false,
+      terminal_ip: config.pax_terminal_ip,
+      message: err.message,
+      code: err.code || "PAX_ERROR"
     };
   }
 
@@ -260,9 +325,29 @@ export async function getPaxStatus() {
 export async function initiatePaxPayment({ amount, currency = "USD", order_id }) {
   ensurePaxEnabled();
 
+  const elavon = getPaxElavonConnectionPayload();
+  try {
+    return await callBridge("/payment/initiate", {
+      method: "POST",
+      body: {
+        amount,
+        currency,
+        orderId: order_id || null,
+        terminalId: config.pax_terminal_id || null,
+        elavon
+      }
+    });
+  } catch (err) {
+    const e = new Error(err.message || "PAX transaction declined");
+    e.code = err.code || "PAX_DECLINED";
+    e.responseCode = err.responseCode;
+    e.paxResult = err.paxResult;
+    throw e;
+  }
+
   // POSLINK amount = cents as string, zero-padded, no decimals
   const amountCents = Math.round(amount * 100).toString();
-  const elavon = getPaxElavonConnectionPayload();
+  const _elavon = getPaxElavonConnectionPayload();
 
   // Legacy/older packet shape.
   const primaryFields = [
@@ -276,8 +361,8 @@ export async function initiatePaxPayment({ amount, currency = "USD", order_id })
     "",            // zip
     order_id || "", // reference / order ID
     "",            // invoice number
-    elavon.tid,    // TID
-    elavon.mid,    // MID
+    _elavon.tid,    // TID
+    _elavon.mid,    // MID
     currency       // currency
   ];
 
@@ -300,8 +385,8 @@ export async function initiatePaxPayment({ amount, currency = "USD", order_id })
       "0",           // amount2 (tip/cashback)
       order_id || "", // ref/order
       "",            // invoice
-      elavon.tid,    // TID
-      elavon.mid,    // MID
+      _elavon.tid,    // TID
+      _elavon.mid,    // MID
       currency       // currency
     ];
 
@@ -337,6 +422,19 @@ export async function initiatePaxPayment({ amount, currency = "USD", order_id })
 export async function cancelPaxPayment() {
   ensurePaxEnabled();
 
+  try {
+    return await callBridge("/payment/cancel", {
+      method: "POST",
+      body: {
+        terminalId: config.pax_terminal_id || null
+      }
+    });
+  } catch (err) {
+    const e = new Error(err.message || "PAX cancel failed");
+    e.code = err.code || "PAX_CANCEL_FAILED";
+    throw e;
+  }
+
   const packet = buildPacket(CMD.ABORT, []);
   const raw = await sendCommand(packet);
   const result = mapResponse(raw);
@@ -355,6 +453,23 @@ export async function voidPaxPayment({ ref_num, amount }) {
     const err = new Error("ref_num is required for void");
     err.code = "PAX_INVALID_INPUT";
     throw err;
+  }
+
+  try {
+    return await callBridge("/payment/void", {
+      method: "POST",
+      body: {
+        ref_num,
+        amount,
+        terminalId: config.pax_terminal_id || null,
+        elavon: getPaxElavonConnectionPayload()
+      }
+    });
+  } catch (err) {
+    const e = new Error(err.message || "PAX void failed");
+    e.code = err.code || "PAX_VOID_FAILED";
+    e.responseCode = err.responseCode;
+    throw e;
   }
 
   const amountCents = amount ? Math.round(amount * 100).toString() : "0";
@@ -395,6 +510,23 @@ export async function voidPaxPayment({ ref_num, amount }) {
  */
 export async function refundPaxPayment({ amount, ref_num }) {
   ensurePaxEnabled();
+
+  try {
+    return await callBridge("/payment/refund", {
+      method: "POST",
+      body: {
+        amount,
+        ref_num,
+        terminalId: config.pax_terminal_id || null,
+        elavon: getPaxElavonConnectionPayload()
+      }
+    });
+  } catch (err) {
+    const e = new Error(err.message || "PAX refund failed");
+    e.code = err.code || "PAX_REFUND_FAILED";
+    e.responseCode = err.responseCode;
+    throw e;
+  }
 
   if (!amount || amount <= 0) {
     const err = new Error("amount > 0 required for refund");
