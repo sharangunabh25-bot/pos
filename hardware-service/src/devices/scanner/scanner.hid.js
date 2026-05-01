@@ -2,23 +2,26 @@ import readline from 'readline';
 import EventBus from '../../events/bus.js';
 import logger from '../../utils/logger.js';
 
-let buffer = '';
-let flushTimer = null;
+export function initKeyboardWedgeScanner() {
+  let buffer = '';
+  let flushTimer = null;
 
-function flushBuffer() {
-  const value = buffer.trim();
-  buffer = '';
-  if (!value) return;
-  EventBus.emit('barcode', value);
-  logger.info(`[SCANNER] HID scan received: ${value}`);
-}
+  function flushBuffer() {
+    const value = buffer.trim();
+    buffer = '';
+    if (!value) return;
+    EventBus.emit('barcode', value);
+    logger.info(`[SCANNER] Keyboard wedge scan received: ${value}`);
+  }
 
-if (!process.stdin.isTTY) {
-  console.warn('[SCANNER] stdin is not TTY; HID keyboard capture disabled');
-} else {
+  if (!process.stdin.isTTY) {
+    logger.warn('[SCANNER] stdin is not TTY; keyboard wedge capture disabled');
+    return false;
+  }
+
   readline.emitKeypressEvents(process.stdin);
   process.stdin.setRawMode(true);
-  logger.info('[SCANNER] HID keyboard capture initialized');
+  logger.info('[SCANNER] Keyboard wedge capture initialized');
 
   process.stdin.on('keypress', (str, key) => {
     const name = key?.name || '';
@@ -33,9 +36,7 @@ if (!process.stdin.isTTY) {
       return;
     }
 
-    if (key?.ctrl || key?.meta) {
-      return;
-    }
+    if (key?.ctrl || key?.meta) return;
 
     if (typeof str === 'string' && str.length > 0) {
       buffer += str;
@@ -45,8 +46,8 @@ if (!process.stdin.isTTY) {
         flushTimer = null;
         flushBuffer();
       }, 120);
-    } else {
-      // Ignore unknown non-character keys.
     }
   });
+
+  return true;
 }

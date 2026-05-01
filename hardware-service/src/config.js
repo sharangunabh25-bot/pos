@@ -30,6 +30,8 @@ let config = {
   /** Barcode scanner (Zebra DS2278) - HID; no config required for keyboard-mode */
   scanner_serial_path: process.env.SCANNER_SERIAL_PATH || "",
   scanner_baud_rate: Number(process.env.SCANNER_BAUD_RATE) || 9600,
+  scanner_hid_vendor_id: Number(process.env.SCANNER_HID_VENDOR_ID) || null,
+  scanner_hid_product_id: Number(process.env.SCANNER_HID_PRODUCT_ID) || null,
   /** Payment terminal (PAX A35) - PAX SDK bridge */
   pax_enabled: process.env.PAX_ENABLED === "true",
   pax_bridge_url: process.env.PAX_BRIDGE_URL || "http://localhost:7001",

@@ -6,12 +6,14 @@ import cashDrawerRoutes from "./routes/cashDrawer.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import keyboardRoutes from "./routes/keyboard.routes.js";
 import displayRoutes from "./routes/display.routes.js";
-import "./devices/scanner/scanner.hid.js";
+import { initKeyboardWedgeScanner } from "./devices/scanner/scanner.hid.js";
+import { initUsbHidScanner } from "./devices/scanner/scanner.usbHid.js";
 import { initScanner } from "./devices/scanner/scanner.service.js";
 import { verifyHardwareAgent } from "./middleware/verifyHardwareAgent.js";
 import { heartbeat } from "./heartbeat.js";
 import { config } from "./config.js";
 import { initScale } from "./devices/scale/scale.service.js";
+import logger from "./utils/logger.js";
 
 const app = express();
 app.use(express.json());
@@ -65,6 +67,27 @@ initScanner({
   path: config.scanner_serial_path,
   baudRate: config.scanner_baud_rate
 }).catch(() => { });
+
+initUsbHidScanner({
+  vendorId: config.scanner_hid_vendor_id,
+  productId: config.scanner_hid_product_id
+})
+  .then((result) => {
+    // Keep keyboard wedge fallback only when USB HID listener is unavailable.
+    if (!result?.started) {
+      const started = initKeyboardWedgeScanner();
+      if (!started) {
+        logger.warn("[SCANNER] No active scanner input listener (USB HID + wedge unavailable)");
+      }
+    }
+  })
+  .catch((err) => {
+    logger.warn(`[SCANNER] USB HID init failed (${err.message}); trying keyboard wedge fallback`);
+    const started = initKeyboardWedgeScanner();
+    if (!started) {
+      logger.warn("[SCANNER] No active scanner input listener after fallback");
+    }
+  });
 
 /* ----------------------------------------------------
    START SERVER
