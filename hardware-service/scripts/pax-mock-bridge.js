@@ -36,7 +36,7 @@ app.get("/payment/status", (req, res) => {
 });
 
 /* ------------------------------------------
-   POST /payment/initiate
+   POST /payment/initiate 
 ------------------------------------------ */
 app.post("/payment/initiate", (req, res) => {
     const { amount, currency = "USD", orderId, terminalId } = req.body;
